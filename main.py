@@ -1,8 +1,10 @@
 import time
 from datetime import datetime, timedelta
 
+
 from data_import import TransitGraph
-from path_finder import AStarTimeStrategy, AStarTransfersStrategy, DijkstraTimeStrategy, DijkstraTransfersStrategy
+from path_finder import AStarTimeStrategy, AStarTransfersStrategy, DijkstraTimeStrategy, DijkstraTransfersStrategy, \
+    heuristic
 
 
 def main():
@@ -15,20 +17,26 @@ def main():
     # optimization_criteria = input("Enter optimization (t for time, p for transfers): ")
     # start_time_at_stop = input("Enter start time (HH:MM:SS): ")
 
-    start_stop = "Biegasa"
-    end_stop = "Adamczewskich"
-    optimization_criteria = "dp"
-    start_time_at_stop = "17:00:00"
+    start_stop = "PL. GRUNWALDZKI"
+    end_stop = "Rynek"
+    optimization_criteria = "dt"
+    start_time_at_stop = "12:43:00"
 
     # Choose the correct strategy based on user input
     if optimization_criteria == "t":
         strategy = AStarTimeStrategy()
+        heuristic_func = heuristic
     elif optimization_criteria == "p":
         strategy = AStarTransfersStrategy()
+        heuristic_func = heuristic
     elif optimization_criteria == "dt":
         strategy = DijkstraTimeStrategy()
+        heuristic_func = None
     elif optimization_criteria == "dp":
         strategy = DijkstraTransfersStrategy()
+        heuristic_func = None
+    else:
+        raise ValueError("Invalid optimization criteria")
 
     # Create the TransitGraph object with the selected strategy
     transit_graph = TransitGraph(file_path, strategy)
@@ -36,7 +44,7 @@ def main():
     # Find the shortest path
     start_time_at_stop_dt = datetime.strptime(start_time_at_stop, "%H:%M:%S") + timedelta(days=1)
     print(start_time_at_stop_dt)
-    cost, path = transit_graph.find_shortest_path(start_stop, end_stop, start_time_at_stop_dt)
+    cost, path = transit_graph.find_shortest_path(start_stop, end_stop, start_time_at_stop_dt, heuristic_func=heuristic_func)
 
     # Output the results
     print(f"Cost: {cost}, Path: {path}")

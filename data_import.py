@@ -1,8 +1,11 @@
+import json
+import pickle
 from bisect import insort
 from datetime import datetime, timedelta
 
 import networkx as nx
 import pandas as pd
+from pandas import Timestamp
 
 from path_finder import PathfindingStrategy
 
@@ -59,23 +62,79 @@ class TransitGraph:
             raise ValueError(f"Invalid time format: {time_str}")
 
     def build_graph(self) -> None:
-        for _, row in self.df.iterrows():
-            start, end = row["start_stop"], row["end_stop"]
 
-            self.graph.add_node(start, x=row["start_stop_lat"], y=row["start_stop_lon"])
-            self.graph.add_node(end, x=row["end_stop_lat"], y=row["end_stop_lon"])
+        self.load_graph("data/transport_network.graphml", format="graphml")
 
-            self.graph.add_edge(start, end)
-            trips = self.graph[start][end].setdefault("trips", [])
+        # for _, row in self.df.iterrows():
+        #     start, end = row["start_stop"], row["end_stop"]
+        #
+        #     self.graph.add_node(start, x=row["start_stop_lat"], y=row["start_stop_lon"])
+        #     self.graph.add_node(end, x=row["end_stop_lat"], y=row["end_stop_lon"])
+        #
+        #     self.graph.add_edge(start, end)
+        #     trips = self.graph[start][end].setdefault("trips", [])
+        #
+        #     trip = {
+        #         "departure_time": row["departure_time"],
+        #         "arrival_time": row["arrival_time"],
+        #         "duration": row["duration"],
+        #         "line": row["line"],
+        #     }
+        #
+        #     insort(trips, trip, key=lambda t: t["arrival_time"])
+        #
+        # self.save_graph("data/transport_network.graphml", format="graphml")
 
-            trip = {
-                "departure_time": row["departure_time"],
-                "arrival_time": row["arrival_time"],
-                "duration": row["duration"],
-                "line": row["line"],
-            }
+    def load_graph(self, filename: str, format: str = "graphml") -> None:
+        """Load the graph from a file in the specified format."""
+        if format == "graphml":
+            self.graph = nx.read_graphml(filename)
 
-            insort(trips, trip, key=lambda t: t["arrival_time"])
+            # Convert trips back to list and timestamps
+            for u, v, data in self.graph.edges(data=True):
+                if "trips" in data:
+                    data["trips"] = json.loads(data["trips"])  # Convert from JSON string to list
+                    for trip in data["trips"]:
+                        trip["departure_time"] = pd.Timestamp(trip["departure_time"])
+                        trip["arrival_time"] = pd.Timestamp(trip["arrival_time"])
+
+        elif format == "gml":
+            self.graph = nx.read_gml(filename)
+        elif format == "json":
+            with open(filename, "r") as f:
+                data = json.load(f)
+                self.graph = nx.node_link_graph(data)
+        elif format == "pickle":
+            with open(filename, "rb") as f:
+                self.graph = pickle.load(f)
+        else:
+            raise ValueError("Unsupported format. Use 'graphml', 'gml', 'json', or 'pickle'.")
+
+    def save_graph(self, filename: str, format: str = "graphml") -> None:
+        """Save the graph to a file in the specified format."""
+        if format == "graphml":
+            for u, v, data in self.graph.edges(data=True):
+                if "trips" in data:
+                    for trip in data["trips"]:
+                        if isinstance(trip["departure_time"], Timestamp):
+                            trip["departure_time"] = trip["departure_time"].isoformat()
+                        if isinstance(trip["arrival_time"], Timestamp):
+                            trip["arrival_time"] = trip["arrival_time"].isoformat()
+
+                    data["trips"] = json.dumps(data["trips"])
+
+            nx.write_graphml(self.graph, filename)
+        elif format == "gml":
+            nx.write_gml(self.graph, filename)
+        elif format == "json":
+            data = nx.node_link_data(self.graph)
+            with open(filename, "w") as f:
+                json.dump(data, f, indent=4)
+        elif format == "pickle":
+            with open(filename, "wb") as f:
+                pickle.dump(self.graph, f)
+        else:
+            raise ValueError("Unsupported format. Use 'graphml', 'gml', 'json', or 'pickle'.")
 
     def apply_duration(self):
         return self.df.apply(
@@ -92,7 +151,7 @@ class TransitGraph:
         )
 
     def find_shortest_path(
-        self, start: str, end: str, start_time_at_stop: datetime, heuristic=None
+        self, start: str, end: str, start_time_at_stop: datetime, heuristic_func=None
     ) -> tuple[float, list[str]]:
-        cost, path = self.strategy.find_path(self.graph, start, end, start_time_at_stop, heuristic)
+        cost, path = self.strategy.find_path(self.graph, start, end, start_time_at_stop, heuristic_func)
         return cost, path
