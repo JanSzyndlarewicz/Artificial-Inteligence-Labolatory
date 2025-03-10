@@ -1,14 +1,14 @@
-import time
 from datetime import datetime
-import matplotlib.pyplot as plt
 import networkx as nx
 import pandas as pd
+from path_finder import PathfindingStrategy
 
 
 class TransitGraph:
-    def __init__(self, file_path: str) -> None:
+    def __init__(self, file_path: str, strategy: PathfindingStrategy) -> None:
         self.df = None
-        self.graph = nx.MultiDiGraph()
+        self.graph = nx.DiGraph()  # Using DiGraph instead of MultiDiGraph
+        self.strategy = strategy
         self.load_data(file_path)
         self.build_graph()
 
@@ -22,11 +22,8 @@ class TransitGraph:
                 self.df[col] = self.df[col].apply(self.clean_time).astype(str)
                 self.df[col] = pd.to_datetime(self.df[col], format='%H:%M:%S').dt.time
 
-            self.df['duration'] = self.df.apply(
-                lambda row: (datetime.combine(datetime.min, row['arrival_time']) - datetime.combine(datetime.min, row[
-                    'departure_time'])).seconds,
-                axis=1
-            )
+            self.df['duration'] = self.apply_duration()
+
         except Exception as e:
             raise ValueError(f"Error loading data: {e}")
 
@@ -40,41 +37,27 @@ class TransitGraph:
 
     def build_graph(self) -> None:
         for _, row in self.df.iterrows():
-            self.graph.add_edge(
-                row['start_stop'],
-                row['end_stop'],
-                key=(row['departure_time'], row['arrival_time']),
-                departure_time=str(row['departure_time']),
-                arrival_time=str(row['arrival_time']),
-                duration=row['duration']
-            )
+            start, end = row['start_stop'], row['end_stop']
+
+            self.graph.add_edge(start, end)
+            self.graph[start][end].setdefault('trips', []).append({
+                'departure_time': str(row['departure_time']),
+                'arrival_time': str(row['arrival_time']),
+                'duration': row['duration'],
+                'line': row['line'],
+            })
+
+    def apply_duration(self):
+        return self.df.apply(
+            lambda row: (datetime.combine(datetime.min, row['arrival_time']) - datetime.combine(datetime.min, row['departure_time'])).seconds,
+            axis=1
+        )
 
     def get_graph_stats(self) -> str:
         return (f"Graph Stats:\n"
                 f" - Nodes: {self.graph.number_of_nodes()}\n"
                 f" - Edges: {self.graph.number_of_edges()}")
 
-
-class GraphVisualizer:
-    @staticmethod
-    def visualize(graph: nx.MultiDiGraph) -> None:
-        plt.figure(figsize=(10, 6))
-        pos = nx.spring_layout(graph)
-        nx.draw(graph, pos, with_labels=True, node_color='skyblue', edge_color='gray', node_size=2000, font_size=10)
-        plt.show()
-
-
-def main():
-    file_path = 'data/connection_graph.csv'
-    start_time = time.time()
-
-    transit_graph = TransitGraph(file_path)
-    print(transit_graph.get_graph_stats())
-
-    GraphVisualizer.visualize(transit_graph.graph)
-    print(f"Graph initialization time: {time.time() - start_time:.6f} seconds")
-
-
-
-if __name__ == "__main__":
-    main()
+    def find_shortest_path(self, start, end, start_time_at_stop, heuristic=None):
+        cost, path = self.strategy.find_path(self.graph, start, end, start_time_at_stop, heuristic)
+        return cost, path
