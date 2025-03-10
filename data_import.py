@@ -25,12 +25,10 @@ class TransitGraph:
                 self.df[col] = self.df[col].apply(self.clean_time).astype(str)
                 self.df[col] = pd.to_datetime(self.df[col], format="%H:%M:%S").dt.time
 
-            # Override departure_time and arrival_time with the adjusted times
             for i, row in self.df.iterrows():
                 departure_time = row["departure_time"]
                 arrival_time = row["arrival_time"]
 
-                # Use 1900-01-01 as the default date
                 departure_datetime = datetime.combine(datetime(1900, 1, 1), departure_time)
                 arrival_datetime = datetime.combine(datetime(1900, 1, 1), arrival_time)
 
@@ -44,11 +42,9 @@ class TransitGraph:
                 self.df.at[i, "departure_time"] = departure_datetime
                 self.df.at[i, "arrival_time"] = arrival_datetime
 
-            # Ensure that both 'departure_time' and 'arrival_time' are datetime objects
             self.df["departure_time"] = pd.to_datetime(self.df["departure_time"])
             self.df["arrival_time"] = pd.to_datetime(self.df["arrival_time"])
 
-            # Calculate duration as the difference between the two datetime objects
             self.df["duration"] = (self.df["arrival_time"] - self.df["departure_time"]).dt.total_seconds()
 
         except Exception as e:
@@ -65,6 +61,9 @@ class TransitGraph:
     def build_graph(self) -> None:
         for _, row in self.df.iterrows():
             start, end = row["start_stop"], row["end_stop"]
+
+            self.graph.add_node(start, x=row["start_stop_lat"], y=row["start_stop_lon"])
+            self.graph.add_node(end, x=row["end_stop_lat"], y=row["end_stop_lon"])
 
             self.graph.add_edge(start, end)
             trips = self.graph[start][end].setdefault("trips", [])
