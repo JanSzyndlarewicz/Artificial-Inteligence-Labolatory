@@ -17,7 +17,7 @@ def main():
 
     start_stop = "Biegasa"
     end_stop = "Adamczewskich"
-    optimization_criteria = "dt"
+    optimization_criteria = "dp"
     start_time_at_stop = "17:00:00"
 
     # Choose the correct strategy based on user input
