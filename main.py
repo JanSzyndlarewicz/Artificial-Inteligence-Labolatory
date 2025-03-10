@@ -19,7 +19,7 @@ def main():
 
     start_stop = "PL. GRUNWALDZKI"
     end_stop = "Rynek"
-    optimization_criteria = "dt"
+    optimization_criteria = "p"
     start_time_at_stop = "12:43:00"
 
     # Choose the correct strategy based on user input

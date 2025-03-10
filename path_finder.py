@@ -27,11 +27,14 @@ class DijkstraTimeStrategy(PathfindingStrategy):
         graph.nodes[start]["arrival"] = start_time
 
         pq = [(0, start)]
+        visited_nodes = 0
 
         while pq:
             cost, current = heapq.heappop(pq)
             if cost > graph.nodes[current]["cost"]:
                 continue
+
+            visited_nodes += 1
 
             current_arrival = graph.nodes[current]["arrival"]
             for root, neighbor, data in graph.edges(current, data=True):
@@ -45,7 +48,6 @@ class DijkstraTimeStrategy(PathfindingStrategy):
                     continue
 
                 wait_time = (best_trip["departure_time"] - current_arrival).total_seconds()
-
                 new_cost = cost + wait_time + best_trip["duration"]
 
                 if new_cost < graph.nodes[neighbor]["cost"]:
@@ -61,6 +63,8 @@ class DijkstraTimeStrategy(PathfindingStrategy):
                         }
                     ]
                     heapq.heappush(pq, (new_cost, neighbor))
+
+        print(f"Visited nodes: {visited_nodes}")
 
         if graph.nodes[end]["timetable"]:
             return graph.nodes[end]["cost"], graph.nodes[end]["timetable"]
@@ -89,10 +93,9 @@ class DijkstraTransfersStrategy(PathfindingStrategy):
             graph.nodes[node]["arrival"] = None
             graph.nodes[node]["timetable"] = []
 
-        graph.nodes[start]["cost"] = 0  # Start with 0 transfers
+        graph.nodes[start]["cost"] = 0
         graph.nodes[start]["arrival"] = start_time
 
-        # Priority queue that prioritizes nodes with fewer transfers
         pq = [(0, start)]
 
         while pq:
@@ -111,14 +114,12 @@ class DijkstraTransfersStrategy(PathfindingStrategy):
                 if best_trip is None:
                     continue
 
-                # Track the number of transfers
                 new_transfers = transfers + (
                     1 if not graph.nodes[root]["timetable"] or graph.nodes[root]["timetable"][-1]["line"] != best_trip[
                         "line"]
                     else 0
                 )
 
-                # If this path has fewer transfers, update the node
                 if new_transfers < graph.nodes[neighbor]["cost"]:
                     graph.nodes[neighbor]["cost"] = new_transfers
                     graph.nodes[neighbor]["arrival"] = best_trip["arrival_time"]
@@ -157,7 +158,7 @@ def heuristic(neighbor, end, graph):
 
 
 class AStarTimeStrategy(PathfindingStrategy):
-    def find_path(self, graph: nx.DiGraph, start: str, end: str, start_time: datetime, heuristic_func: callable=None):
+    def find_path(self, graph: nx.DiGraph, start: str, end: str, start_time: datetime, heuristic_func: callable = None) -> tuple[float, list[dict]]:
         for node in graph.nodes:
             graph.nodes[node]["cost"] = float("inf")
             graph.nodes[node]["arrival"] = None
@@ -167,11 +168,14 @@ class AStarTimeStrategy(PathfindingStrategy):
         graph.nodes[start]["arrival"] = start_time
 
         pq = [(0, start)]
+        visited_nodes = 0
 
         while pq:
             current_f, current = heapq.heappop(pq)
             if current == end:
-                break  # Found the destination
+                break
+
+            visited_nodes += 1
 
             current_cost = graph.nodes[current]["cost"]
             current_arrival = graph.nodes[current]["arrival"]
@@ -188,8 +192,7 @@ class AStarTimeStrategy(PathfindingStrategy):
                 wait_time = (best_trip["departure_time"] - current_arrival).total_seconds()
                 new_cost = current_cost + wait_time + best_trip["duration"]
 
-                # Heuristic function for estimating the time to the goal (using coordinates)
-                h = heuristic(neighbor, end, graph)  # Heuristic function should estimate time to the end node
+                h = heuristic_func(neighbor, end, graph) if heuristic_func else 0
 
                 new_f = new_cost + h
 
@@ -207,10 +210,13 @@ class AStarTimeStrategy(PathfindingStrategy):
                     ]
                     heapq.heappush(pq, (new_f, neighbor))
 
+        print(f"Visited nodes: {visited_nodes}")
+
         if graph.nodes[end]["timetable"]:
             return graph.nodes[end]["cost"], graph.nodes[end]["timetable"]
         else:
             return float("inf"), []
+
 
     def get_best_trip(self, trips: list[dict], arrival_time: datetime, current_line: str | None) -> dict | None:
         best_trip = None
@@ -226,7 +232,7 @@ class AStarTimeStrategy(PathfindingStrategy):
 
 
 class AStarTransfersStrategy(PathfindingStrategy):
-    def find_path(self, graph: nx.DiGraph, start: str, end: str, start_time: datetime, heuristic_func: callable=None):
+    def find_path(self, graph: nx.DiGraph, start: str, end: str, start_time: datetime, heuristic_func: callable = None) -> tuple[float, list[dict]]:
         for node in graph.nodes:
             graph.nodes[node]["cost"] = float("inf")
             graph.nodes[node]["arrival"] = None
@@ -235,12 +241,15 @@ class AStarTransfersStrategy(PathfindingStrategy):
         graph.nodes[start]["cost"] = 0
         graph.nodes[start]["arrival"] = start_time
 
-        pq = [(0, start)]  # Priority queue stores (f(n), node)
+        pq = [(0, start)]
+        visited_nodes = 0
 
         while pq:
             current_f, current = heapq.heappop(pq)
             if current == end:
-                break  # Found the destination
+                break
+
+            visited_nodes += 1
 
             current_cost = graph.nodes[current]["cost"]
             current_arrival = graph.nodes[current]["arrival"]
@@ -254,14 +263,12 @@ class AStarTransfersStrategy(PathfindingStrategy):
                 if best_trip is None:
                     continue
 
-                # Track the number of transfers
                 new_transfers = current_cost + (
                     1 if not graph.nodes[root]["timetable"] or graph.nodes[root]["timetable"][-1]["line"] != best_trip["line"]
                     else 0
                 )
 
-                # Heuristic function for estimating the transfers to the goal
-                h = heuristic(neighbor, end)  # Heuristic function should estimate transfers to the end node
+                h = heuristic_func(neighbor, end, graph) if heuristic_func else 0
 
                 new_f = new_transfers + h
 
@@ -279,10 +286,13 @@ class AStarTransfersStrategy(PathfindingStrategy):
                     ]
                     heapq.heappush(pq, (new_f, neighbor))
 
+        print(f"Visited nodes: {visited_nodes}")
+
         if graph.nodes[end]["timetable"]:
             return graph.nodes[end]["cost"], graph.nodes[end]["timetable"]
         else:
             return float("inf"), []
+
 
     def get_best_trip(self, trips: list[dict], arrival_time: datetime, current_line: str | None) -> dict | None:
         best_trip = None
