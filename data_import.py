@@ -11,10 +11,9 @@ from path_finder import PathfindingStrategy
 
 
 class TransitGraph:
-    def __init__(self, file_path: str, strategy: PathfindingStrategy) -> None:
+    def __init__(self, file_path: str) -> None:
         self.df = None
         self.graph = nx.DiGraph()
-        self.strategy = strategy
         self.load_data(file_path)
         self.build_graph()
 
@@ -151,7 +150,7 @@ class TransitGraph:
         )
 
     def find_shortest_path(
-        self, start: str, end: str, start_time_at_stop: datetime, heuristic_func=None
+        self, strategy: PathfindingStrategy, start: str, end: str, start_time_at_stop: datetime
     ) -> tuple[float, list[str]]:
-        cost, path = self.strategy.find_path(self.graph, start, end, start_time_at_stop, heuristic_func)
+        cost, path = strategy.find_path(self.graph, start, end, start_time_at_stop)
         return cost, path
