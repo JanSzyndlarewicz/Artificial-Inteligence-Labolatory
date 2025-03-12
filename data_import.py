@@ -1,4 +1,7 @@
+import copy
 import json
+import logging
+import os
 import pickle
 from bisect import insort
 from datetime import datetime, timedelta
@@ -7,19 +10,24 @@ import networkx as nx
 import pandas as pd
 from pandas import Timestamp
 
+from config import GRAPH_FILE_PATH
 from path_finder import PathfindingStrategy
 
 
 class TransitGraph:
     def __init__(self, file_path: str) -> None:
+        self.logger = logging.getLogger(__name__)
         self.df = None
+        self.file_path = file_path
         self.graph = nx.DiGraph()
-        self.load_data(file_path)
         self.build_graph()
 
     def load_data(self, file_path: str) -> None:
         try:
+            self.logger.info(f"Loading data from {file_path}")
             self.df = pd.read_csv(file_path, dtype=str)
+
+            self.logger.info(f"Preprocessing data")
             self.df.dropna(inplace=True)
 
             time_cols = ["departure_time", "arrival_time"]
@@ -62,27 +70,33 @@ class TransitGraph:
 
     def build_graph(self) -> None:
 
-        self.load_graph("data/transport_network.graphml", format="graphml")
+        if os.path.exists(GRAPH_FILE_PATH):
+            self.logger.info(f"Loading graph from {GRAPH_FILE_PATH}")
+            self.load_graph(GRAPH_FILE_PATH, format="graphml")
+        else:
+            self.logger.info("Loading data for new graph")
+            self.load_data(self.file_path)
 
-        # for _, row in self.df.iterrows():
-        #     start, end = row["start_stop"], row["end_stop"]
-        #
-        #     self.graph.add_node(start, x=row["start_stop_lat"], y=row["start_stop_lon"])
-        #     self.graph.add_node(end, x=row["end_stop_lat"], y=row["end_stop_lon"])
-        #
-        #     self.graph.add_edge(start, end)
-        #     trips = self.graph[start][end].setdefault("trips", [])
-        #
-        #     trip = {
-        #         "departure_time": row["departure_time"],
-        #         "arrival_time": row["arrival_time"],
-        #         "duration": row["duration"],
-        #         "line": row["line"],
-        #     }
-        #
-        #     insort(trips, trip, key=lambda t: t["arrival_time"])
-        #
-        # self.save_graph("data/transport_network.graphml", format="graphml")
+            self.logger.info("Building a graph")
+            for _, row in self.df.iterrows():
+                start, end = row["start_stop"], row["end_stop"]
+
+                self.graph.add_node(start, x=row["start_stop_lat"], y=row["start_stop_lon"])
+                self.graph.add_node(end, x=row["end_stop_lat"], y=row["end_stop_lon"])
+
+                self.graph.add_edge(start, end)
+                trips = self.graph[start][end].setdefault("trips", [])
+
+                trip = {
+                    "departure_time": row["departure_time"],
+                    "arrival_time": row["arrival_time"],
+                    "duration": row["duration"],
+                    "line": row["line"],
+                }
+
+                insort(trips, trip, key=lambda t: t["arrival_time"])
+
+            self.save_graph(GRAPH_FILE_PATH, format="graphml")
 
     def load_graph(self, filename: str, format: str = "graphml") -> None:
         """Load the graph from a file in the specified format."""
@@ -112,7 +126,8 @@ class TransitGraph:
     def save_graph(self, filename: str, format: str = "graphml") -> None:
         """Save the graph to a file in the specified format."""
         if format == "graphml":
-            for u, v, data in self.graph.edges(data=True):
+            graph_copy = copy.deepcopy(self.graph)
+            for u, v, data in graph_copy.edges(data=True):
                 if "trips" in data:
                     for trip in data["trips"]:
                         if isinstance(trip["departure_time"], Timestamp):
@@ -122,7 +137,7 @@ class TransitGraph:
 
                     data["trips"] = json.dumps(data["trips"])
 
-            nx.write_graphml(self.graph, filename)
+            nx.write_graphml(graph_copy, filename)
         elif format == "gml":
             nx.write_gml(self.graph, filename)
         elif format == "json":

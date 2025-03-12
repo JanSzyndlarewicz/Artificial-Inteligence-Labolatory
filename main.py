@@ -1,15 +1,17 @@
+import logging
 import time
 from datetime import datetime, timedelta
 
-
+from config import DATA_FILE_PATH
 from data_import import TransitGraph
+from factory import StrategyFactory
 from heuristics import EuclideanDistanceHeuristic
 from path_finder import AStarTimeStrategy, AStarTransfersStrategy, DijkstraTimeStrategy, DijkstraTransfersStrategy
 from trip_selection_strategies import TimeBasedBestTripSelection, TransferBasedBestTripSelection
 
+logger = logging.getLogger(__name__)
 
 def main():
-    file_path = "data/connection_graph.csv"
     start_time = time.time()
 
     # Collect user input
@@ -51,22 +53,23 @@ def main():
     # print(f"Cost: {cost}, Path: {path}")
     # print(f"Computation time: {time.time() - start_time:.6f} seconds")
 
-    strategies = [
-        ("AStarTimeStrategy", AStarTimeStrategy(TimeBasedBestTripSelection(), EuclideanDistanceHeuristic())),
-        ("AStarTransfersStrategy", AStarTransfersStrategy(TransferBasedBestTripSelection(), EuclideanDistanceHeuristic())),
-        ("DijkstraTimeStrategy", DijkstraTimeStrategy(TimeBasedBestTripSelection())),
-        ("DijkstraTransfersStrategy", DijkstraTransfersStrategy(TransferBasedBestTripSelection()))
+    strategy_names = [
+        "AStarTimeStrategy",
+        "AStarTransfersStrategy",
+        "DijkstraTimeStrategy",
+        "DijkstraTransfersStrategy"
     ]
 
+    strategies = [(name, StrategyFactory.create_strategy(name)) for name in strategy_names]
+
     start_time_at_stop_dt = datetime.strptime(start_time_at_stop, "%H:%M:%S") + timedelta(days=1)
-    print(start_time_at_stop_dt)
-    transit_graph = TransitGraph(file_path)
+    transit_graph = TransitGraph(DATA_FILE_PATH)
     for strategy_name, strategy in strategies:
-        print(f"Using strategy: {strategy_name}")
+        logger.info(f"Using strategy: {strategy_name}")
         cost, path = transit_graph.find_shortest_path(strategy, start_stop, end_stop, start_time_at_stop_dt)
-        print(f"Cost: {cost}, Path: {path}")
-        print(f"Computation time: {time.time() - start_time:.6f} seconds")
-        print()
+        logger.info(f"Cost: {cost}, Path: {path}")
+        logger.info(f"Computation timestamp: {time.time() - start_time:.6f} seconds")
+        logger.info("------------------------")
 
 
 if __name__ == "__main__":
