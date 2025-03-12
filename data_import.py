@@ -150,7 +150,7 @@ class TransitGraph:
         else:
             raise ValueError("Unsupported format. Use 'graphml', 'gml', 'json', or 'pickle'.")
 
-    def apply_duration(self):
+    def apply_duration(self) -> pd.Series:
         return self.df.apply(
             lambda row: (
                 datetime.combine(datetime.min, row["arrival_time"])

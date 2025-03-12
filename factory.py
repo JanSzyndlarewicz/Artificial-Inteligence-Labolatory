@@ -1,11 +1,17 @@
 from heuristics import EuclideanDistanceHeuristic
-from path_finder import AStarTimeStrategy, AStarTransfersStrategy, DijkstraTimeStrategy, DijkstraTransfersStrategy
+from path_finder import (
+    AStarTimeStrategy,
+    AStarTransfersStrategy,
+    DijkstraTimeStrategy,
+    DijkstraTransfersStrategy,
+    PathfindingStrategy,
+)
 from trip_selection_strategies import TimeBasedBestTripSelection, TransferBasedBestTripSelection
 
 
 class StrategyFactory:
     @staticmethod
-    def create_strategy(strategy_name: str):
+    def create_strategy(strategy_name: str) -> PathfindingStrategy:
         if strategy_name == "AStarTimeStrategy":
             return AStarTimeStrategy(TimeBasedBestTripSelection(), EuclideanDistanceHeuristic())
         elif strategy_name == "AStarTransfersStrategy":

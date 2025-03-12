@@ -29,7 +29,7 @@ class PathfindingStrategy(ABC):
         best_trip: dict,
         new_cost: float,
         new_f: float,
-    ):
+    ) -> None:
         graph.nodes[neighbor]["cost"] = new_cost
         graph.nodes[neighbor]["arrival"] = best_trip["arrival_time"]
         graph.nodes[neighbor]["timetable"] = graph.nodes[current].get("timetable", []) + [
@@ -44,7 +44,7 @@ class PathfindingStrategy(ABC):
         heapq.heappush(pq, (new_f, neighbor))
 
     @abstractmethod
-    def find_path(self, graph: nx.DiGraph, start: str, end: str, start_time: datetime):
+    def find_path(self, graph: nx.DiGraph, start: str, end: str, start_time: datetime) -> tuple[float, list[dict]]:
         pass
 
 
