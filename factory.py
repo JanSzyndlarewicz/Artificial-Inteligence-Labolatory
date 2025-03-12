@@ -1,11 +1,7 @@
 from heuristics import EuclideanDistanceHeuristic
-from path_finder import (
-    AStarTimeStrategy,
-    AStarTransfersStrategy,
-    DijkstraTimeStrategy,
-    DijkstraTransfersStrategy,
-    PathfindingStrategy,
-)
+from path_finding_strategies import PathfindingStrategy, AStarTransfersStrategy, DijkstraTimeStrategy, \
+    DijkstraTransfersStrategy, AStarOptimizedTimeStrategy, AStarOptimizedTransferStrategy
+from path_finding_strategies.a_star_time import AStarTimeStrategy
 from trip_selection_strategies import TimeBasedBestTripSelection, TransferBasedBestTripSelection
 
 
@@ -20,5 +16,9 @@ class StrategyFactory:
             return DijkstraTimeStrategy(TimeBasedBestTripSelection())
         elif strategy_name == "DijkstraTransfersStrategy":
             return DijkstraTransfersStrategy(TransferBasedBestTripSelection())
+        elif strategy_name == "AStarOptimizedTimeStrategy":
+            return AStarOptimizedTimeStrategy(TimeBasedBestTripSelection(), EuclideanDistanceHeuristic())
+        elif strategy_name == "AStarOptimizedTransferStrategy":
+            return AStarOptimizedTransferStrategy(TransferBasedBestTripSelection(), EuclideanDistanceHeuristic())
         else:
             raise ValueError(f"Unknown strategy: {strategy_name}")

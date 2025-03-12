@@ -3,11 +3,8 @@ import time
 from datetime import datetime, timedelta
 
 from config import DATA_FILE_PATH
-from data_import import TransitGraph
+from graph_builder import TransitGraph
 from factory import StrategyFactory
-from heuristics import EuclideanDistanceHeuristic
-from path_finder import AStarTimeStrategy, AStarTransfersStrategy, DijkstraTimeStrategy, DijkstraTransfersStrategy
-from trip_selection_strategies import TimeBasedBestTripSelection, TransferBasedBestTripSelection
 
 logger = logging.getLogger(__name__)
 
@@ -55,10 +52,12 @@ def main():
     # print(f"Computation time: {time.time() - start_time:.6f} seconds")
 
     strategy_names = [
-        "AStarTimeStrategy",
-        "AStarTransfersStrategy",
         "DijkstraTimeStrategy",
         "DijkstraTransfersStrategy",
+        "AStarTimeStrategy",
+        "AStarTransfersStrategy",
+        "AStarOptimizedTimeStrategy",
+        "AStarOptimizedTransferStrategy",
     ]
 
     strategies = [(name, StrategyFactory.create_strategy(name)) for name in strategy_names]

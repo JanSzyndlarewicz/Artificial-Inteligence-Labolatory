@@ -11,7 +11,7 @@ import pandas as pd
 from pandas import Timestamp
 
 from config import GRAPH_FILE_PATH
-from path_finder import PathfindingStrategy
+from path_finding_strategies import PathfindingStrategy
 
 
 class TransitGraph:
