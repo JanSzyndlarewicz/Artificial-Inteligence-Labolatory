@@ -2,6 +2,7 @@ from heuristics import EuclideanDistanceHeuristic
 from path_finder import AStarTimeStrategy, AStarTransfersStrategy, DijkstraTimeStrategy, DijkstraTransfersStrategy
 from trip_selection_strategies import TimeBasedBestTripSelection, TransferBasedBestTripSelection
 
+
 class StrategyFactory:
     @staticmethod
     def create_strategy(strategy_name: str):

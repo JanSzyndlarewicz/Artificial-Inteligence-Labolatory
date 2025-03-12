@@ -11,6 +11,7 @@ from trip_selection_strategies import TimeBasedBestTripSelection, TransferBasedB
 
 logger = logging.getLogger(__name__)
 
+
 def main():
     start_time = time.time()
 
@@ -57,7 +58,7 @@ def main():
         "AStarTimeStrategy",
         "AStarTransfersStrategy",
         "DijkstraTimeStrategy",
-        "DijkstraTransfersStrategy"
+        "DijkstraTransfersStrategy",
     ]
 
     strategies = [(name, StrategyFactory.create_strategy(name)) for name in strategy_names]

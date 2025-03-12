@@ -21,7 +21,15 @@ class PathfindingStrategy(ABC):
         graph.nodes[start]["arrival"] = start_time
 
     @staticmethod
-    def update_node(graph: nx.DiGraph, pq: list[tuple[float, str]], current: str, neighbor: str, best_trip: dict, new_cost: float, new_f: float):
+    def update_node(
+        graph: nx.DiGraph,
+        pq: list[tuple[float, str]],
+        current: str,
+        neighbor: str,
+        best_trip: dict,
+        new_cost: float,
+        new_f: float,
+    ):
         graph.nodes[neighbor]["cost"] = new_cost
         graph.nodes[neighbor]["arrival"] = best_trip["arrival_time"]
         graph.nodes[neighbor]["timetable"] = graph.nodes[current].get("timetable", []) + [
@@ -107,7 +115,9 @@ class DijkstraTransfersStrategy(PathfindingStrategy):
                     continue
 
                 new_cost = transfers + (
-                    1 if not graph.nodes[root]["timetable"] or graph.nodes[root]["timetable"][-1]["line"] != best_trip["line"]
+                    1
+                    if not graph.nodes[root]["timetable"]
+                    or graph.nodes[root]["timetable"][-1]["line"] != best_trip["line"]
                     else 0
                 )
 
@@ -192,7 +202,9 @@ class AStarTransfersStrategy(PathfindingStrategy):
                     continue
 
                 new_cost = current_cost + (
-                    1 if not graph.nodes[root]["timetable"] or graph.nodes[root]["timetable"][-1]["line"] != best_trip["line"]
+                    1
+                    if not graph.nodes[root]["timetable"]
+                    or graph.nodes[root]["timetable"][-1]["line"] != best_trip["line"]
                     else 0
                 )
 
@@ -202,4 +214,3 @@ class AStarTransfersStrategy(PathfindingStrategy):
                     self.update_node(graph, pq, current, neighbor, best_trip, new_cost, new_f)
 
         return float("inf"), []
-
