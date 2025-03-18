@@ -26,6 +26,7 @@ class AStarOptimizedTimeStrategy(AStarTimeStrategy):
                 return graph.nodes[end]["cost"], graph.nodes[end]["timetable"]
 
             visited_nodes += 1
+
             current_cost = graph.nodes[current]["cost"]
             current_arrival = graph.nodes[current]["arrival"]
 

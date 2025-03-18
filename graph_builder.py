@@ -42,7 +42,6 @@ class TransitGraph:
                 departure_datetime = datetime.combine(datetime(1900, 1, 1), departure_time)
                 arrival_datetime = datetime.combine(datetime(1900, 1, 1), arrival_time)
 
-                # If arrival_time >= departure_time, add +1 day to arrival_time
                 if arrival_time >= departure_time:
                     departure_datetime += timedelta(days=1)
 
