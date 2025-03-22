@@ -176,8 +176,7 @@ class TransitGraph:
         start: str,
         stops: list[str],
         start_time: datetime,
-        tabu_size: int = 10,
         max_iter: int = 100,
     ) -> tuple[list[str], float]:
 
-        return transit_optimizer.tabu_search(self.graph, start, stops, start_time, tabu_size, max_iter)
+        return transit_optimizer.tabu_search(self.graph, start, stops, start_time, max_iter)

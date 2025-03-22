@@ -61,7 +61,7 @@ def main():
     transit_optimizer = TransitOptimizer(StrategyFactory.create_strategy("AStarTimeStrategy"))
 
     start = "PL. GRUNWALDZKI"
-    stops = ["Wojnów", "PL. GRUNWALDZKI", "EPI", "Rynek", "Kamieńskiego"]
+    stops = ["Wojnów", "EPI", "Rynek", "Kamieńskiego"]
 
     start_time_at_stop = "16:30:00"
     date_str = "02.01.1900"

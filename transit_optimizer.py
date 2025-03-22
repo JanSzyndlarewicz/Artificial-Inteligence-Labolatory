@@ -41,17 +41,17 @@ class TransitOptimizer:
         return total_cost, full_path
 
     def tabu_search(
-        self,
-        graph: nx.DiGraph,
-        start: str,
-        stops: list[str],
-        start_time: datetime,
-        tabu_size: int = 10,
-        max_iter: int = 100,
+            self,
+            graph: nx.DiGraph,
+            start: str,
+            stops: list[str],
+            start_time: datetime,
+            max_iter: int = 100,
     ) -> tuple[list[str], float]:
         best_route, best_cost = [start] + stops + [start], float("inf")
         best_path = []
         tabu_list = []
+        tabu_size = 10
 
         self.logger.info(f"Starting tabu search with start: {start}, stops: {stops}, start time: {start_time}")
 
@@ -79,8 +79,9 @@ class TransitOptimizer:
                     current_start_time = path[-1]["arrival_time"] if path else current_start_time
 
                 self.logger.debug(
-                    f"Computed cost: {total_cost} for route: {n}, tabu list: {tabu_list}, start time: {start_time}"
-                )
+                    f"Computed cost: {total_cost} for route: {n}, tabu list: {tabu_list}, start time: {start_time}")
+
+                # if total_cost < best_cost or n not in tabu_list:
                 if total_cost < best_cost:
                     best_route, best_cost = n, total_cost
                     tabu_list.append(n)

@@ -2,6 +2,7 @@ import heapq
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
+from functools import lru_cache
 
 import networkx as nx
 
@@ -48,5 +49,6 @@ class PathfindingStrategy(ABC):
         heapq.heappush(pq, (new_f, neighbor))
 
     @abstractmethod
+    @lru_cache(1024)
     def find_path(self, graph: nx.DiGraph, start: str, end: str, start_time: datetime) -> tuple[float, list[dict]]:
         pass
