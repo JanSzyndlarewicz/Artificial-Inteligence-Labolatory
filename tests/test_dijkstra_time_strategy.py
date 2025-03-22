@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 from heapq import heappop, heappush
 
 import networkx as nx
-
 from path_finder import DijkstraTimeStrategy
 
 

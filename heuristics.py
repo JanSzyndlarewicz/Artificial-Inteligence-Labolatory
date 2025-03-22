@@ -21,8 +21,12 @@ class EuclideanDistanceHeuristic(HeuristicFunction):
 
 class HaversineDistanceHeuristic(HeuristicFunction):
     def __call__(self, neighbor: str, end: str, graph: nx.DiGraph) -> Any:
-        lat1, lon1 = math.radians(float(graph.nodes[neighbor]["x"])), math.radians(float(graph.nodes[neighbor]["y"]))
-        lat2, lon2 = math.radians(float(graph.nodes[end]["x"])), math.radians(float(graph.nodes[end]["y"]))
+        return self.haversine_distance(graph.nodes[neighbor], graph.nodes[end])
+
+    @staticmethod
+    def haversine_distance(node1, node2):
+        lat1, lon1 = math.radians(float(node1["x"])), math.radians(float(node1["y"]))
+        lat2, lon2 = math.radians(float(node2["x"])), math.radians(float(node2["y"]))
 
         dlat = lat2 - lat1
         dlon = lon2 - lon1
@@ -31,5 +35,25 @@ class HaversineDistanceHeuristic(HeuristicFunction):
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
         R = 6371
-        distance = R * c
-        return distance
+        return R * c
+
+
+class HaversineMaxTimeHeuristic(HaversineDistanceHeuristic):
+    def __call__(self, neighbor: str, end: str, graph: nx.DiGraph) -> Any:
+        distance = self.haversine_distance(graph.nodes[neighbor], graph.nodes[end])
+
+        speed = 74  # km/h
+        return (distance / speed) * 3600
+
+class HaversineAverageTimeHeuristic(HaversineDistanceHeuristic):
+    def __call__(self, neighbor: str, end: str, graph: nx.DiGraph) -> Any:
+        distance = self.haversine_distance(graph.nodes[neighbor], graph.nodes[end])
+
+        speed = 25  # km/h
+        return (distance / speed) * 3600
+
+class HaversineCoefficientTransferHeuristic(HaversineDistanceHeuristic):
+    def __call__(self, neighbor: str, end: str, graph: nx.DiGraph) -> Any:
+        distance = self.haversine_distance(graph.nodes[neighbor], graph.nodes[end])
+        coefficient = 0.5
+        return distance * coefficient

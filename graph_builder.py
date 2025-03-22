@@ -12,6 +12,7 @@ from pandas import Timestamp
 
 from config import GRAPH_FILE_PATH
 from path_finding_strategies import PathfindingStrategy
+from transit_optimizer import TransitOptimizer
 
 
 class TransitGraph:
@@ -165,6 +166,18 @@ class TransitGraph:
 
     def find_shortest_path(
         self, strategy: PathfindingStrategy, start: str, end: str, start_time_at_stop: datetime
-    ) -> tuple[float, list[str]]:
+    ) -> tuple[float, list[dict]]:
         cost, path = strategy.find_path(self.graph, start, end, start_time_at_stop)
         return cost, path
+
+    def optimize_transit(
+        self,
+        transit_optimizer: TransitOptimizer,
+        start: str,
+        stops: list[str],
+        start_time: datetime,
+        tabu_size: int = 10,
+        max_iter: int = 100,
+    ) -> tuple[list[str], float]:
+
+        return transit_optimizer.tabu_search(self.graph, start, stops, start_time, tabu_size, max_iter)

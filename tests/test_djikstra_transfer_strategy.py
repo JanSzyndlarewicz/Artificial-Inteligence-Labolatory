@@ -3,7 +3,7 @@ from datetime import datetime
 
 import networkx as nx
 
-from path_finder import DijkstraTransfersStrategy
+from path_finding_strategies import DijkstraTransfersStrategy
 
 
 class TestDijkstraTransfersStrategy(unittest.TestCase):

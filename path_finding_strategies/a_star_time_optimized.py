@@ -36,17 +36,16 @@ class AStarOptimizedTimeStrategy(AStarTimeStrategy):
                     current_arrival,
                     graph.nodes[root]["timetable"][-1].get("line") if graph.nodes[root]["timetable"] else None,
                 )
-                if best_trip is None:
+                if best_trip is None or (best_trip["departure_time"] - current_arrival).total_seconds() > 5 * 60:
                     continue
 
                 wait_time = (best_trip["departure_time"] - current_arrival).total_seconds()
                 new_cost = current_cost + wait_time + best_trip["duration"]
 
-                heuristic_adjustment = self.heuristic_func(neighbor, end, graph) * 10000
-
-                new_f = new_cost + heuristic_adjustment
-
                 if neighbor not in best_known or new_cost < best_known[neighbor]:
+                    heuristic_adjustment = self.heuristic_func(neighbor, end, graph)
+                    new_f = new_cost + heuristic_adjustment
+
                     best_known[neighbor] = new_cost
                     self.update_node(graph, pq, current, neighbor, best_trip, new_cost, new_f)
 

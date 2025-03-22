@@ -1,6 +1,12 @@
 from heuristics import HaversineDistanceHeuristic
-from path_finding_strategies import PathfindingStrategy, AStarTransfersStrategy, DijkstraTimeStrategy, \
-    DijkstraTransfersStrategy, AStarOptimizedTimeStrategy, AStarOptimizedTransferStrategy
+from path_finding_strategies import (
+    AStarOptimizedTimeStrategy,
+    AStarOptimizedTransferStrategy,
+    AStarTransfersStrategy,
+    DijkstraTimeStrategy,
+    DijkstraTransfersStrategy,
+    PathfindingStrategy,
+)
 from path_finding_strategies.a_star_time import AStarTimeStrategy
 from trip_selection_strategies import TimeBasedBestTripSelection, TransferBasedBestTripSelection
 
