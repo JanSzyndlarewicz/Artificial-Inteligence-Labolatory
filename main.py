@@ -100,5 +100,40 @@ def main():
         logger.info("------------------------")
 
 
+# def main():
+#     start_time = time.time()
+#
+#     transit_graph = TransitGraph(DATA_FILE_PATH)
+#
+#     service_type = input("Choose service type (1: fastest route A->B, 2: fastest path through set of points): ")
+#
+#     if service_type == "1":
+#         start_stop = input("Enter start stop: ")
+#         end_stop = input("Enter end stop: ")
+#         optimization_criteria = input("Enter optimization (t for time, p for transfers): ")
+#         start_time_at_stop = input("Enter start time (HH:MM:SS): ")
+#
+#         strategy = StrategyFactory.create_strategy(
+#             "AStarTimeStrategy" if optimization_criteria == "t" else "AStarTransfersStrategy")
+#         start_time_at_stop_dt = datetime.strptime(start_time_at_stop, "%H:%M:%S") + timedelta(days=1)
+#         cost, path = transit_graph.find_shortest_path(strategy, start_stop, end_stop, start_time_at_stop_dt)
+#
+#         print(f"Cost: {cost}, Path: {path}")
+#
+#     elif service_type == "2":
+#         start_stop = input("Enter start stop: ")
+#         stops = input("Enter stops to visit (comma-separated): ").split(",")
+#         start_time_at_stop = input("Enter start time (HH:MM:SS): ")
+#
+#         transit_optimizer = TransitOptimizer(StrategyFactory.create_strategy("AStarTimeStrategy"))
+#         start_time_at_stop_dt = datetime.strptime(start_time_at_stop, "%H:%M:%S")
+#         transit_graph.optimize_transit(transit_optimizer, start_stop, stops, start_time_at_stop_dt)
+#
+#     else:
+#         print("Invalid choice.")
+#         return
+#
+#     print(f"Computation time: {time.time() - start_time:.6f} seconds")
+
 if __name__ == "__main__":
     main()

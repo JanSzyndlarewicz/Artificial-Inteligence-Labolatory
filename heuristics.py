@@ -45,12 +45,14 @@ class HaversineMaxTimeHeuristic(HaversineDistanceHeuristic):
         speed = 74  # km/h
         return (distance / speed) * 3600
 
+
 class HaversineAverageTimeHeuristic(HaversineDistanceHeuristic):
     def __call__(self, neighbor: str, end: str, graph: nx.DiGraph) -> Any:
         distance = self.haversine_distance(graph.nodes[neighbor], graph.nodes[end])
 
         speed = 25  # km/h
         return (distance / speed) * 3600
+
 
 class HaversineCoefficientTransferHeuristic(HaversineDistanceHeuristic):
     def __call__(self, neighbor: str, end: str, graph: nx.DiGraph) -> Any:

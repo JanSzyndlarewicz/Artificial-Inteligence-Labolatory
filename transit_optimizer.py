@@ -1,11 +1,11 @@
 import logging
 import random
 from datetime import datetime
-from typing import Any
 
 import networkx as nx
 
 from path_finding_strategies import PathfindingStrategy
+from trip_selection_strategies import TransferBasedBestTripSelection
 
 
 class TransitOptimizer:
@@ -13,7 +13,7 @@ class TransitOptimizer:
         self.logger = logging.getLogger(__name__)
         self.astar_strategy = path_finder
 
-    def compute_cost(self, graph: nx.DiGraph, route: list[str], start_time: datetime) -> float | tuple[int, list[Any]]:
+    def compute_cost(self, graph: nx.DiGraph, route: list[str], start_time: datetime) -> float | tuple[int, list[dict]]:
         total_cost = 0
         full_path = []
         prev_line = None
@@ -29,8 +29,13 @@ class TransitOptimizer:
             self.logger.debug(f"Computed cost: {cost} for route: {route}, start time: {start_time}")
 
             total_cost += cost
-            if path and prev_line and prev_line != path[0]["line"]:
-                total_cost += 1
+            if (
+                path
+                and prev_line
+                and prev_line != path[0]["line"]
+                and isinstance(self.astar_strategy.best_trip_strategy, TransferBasedBestTripSelection)
+            ):
+                total_cost += -1
             prev_line = path[-1]["line"] if path else None
 
         return total_cost, full_path
@@ -47,6 +52,8 @@ class TransitOptimizer:
         best_route, best_cost = [start] + stops + [start], float("inf")
         best_path = []
         tabu_list = []
+
+        self.logger.info(f"Starting tabu search with start: {start}, stops: {stops}, start time: {start_time}")
 
         for _ in range(max_iter):
             neighbors = [list(best_route) for _ in range(len(stops))]
