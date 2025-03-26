@@ -22,7 +22,7 @@ class AStarTransfersStrategy(PathfindingStrategy):
         while pq:
             current_f, current = heapq.heappop(pq)
             if current == end:
-                self.logger.info(f"Visited nodes: {visited_nodes}")
+                self.logger.debug(f"Visited nodes: {visited_nodes}")
                 return graph.nodes[end]["cost"], graph.nodes[end]["timetable"]
 
             visited_nodes += 1
@@ -51,6 +51,6 @@ class AStarTransfersStrategy(PathfindingStrategy):
                 if new_cost < graph.nodes[neighbor]["cost"]:
                     self.update_node(graph, pq, current, neighbor, best_trip, new_cost, new_f)
 
-        self.logger.info(f"Visited nodes: {visited_nodes}")
+        self.logger.debug(f"Visited nodes: {visited_nodes}")
 
         return float("inf"), []
