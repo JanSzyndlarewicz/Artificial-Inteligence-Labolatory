@@ -28,7 +28,6 @@ class TransitGraph:
             self.logger.info(f"Loading data from {file_path}")
             self.df = pd.read_csv(file_path, dtype=str)
 
-            self.logger.info(f"Preprocessing data")
             self.df.dropna(inplace=True)
 
             time_cols = ["departure_time", "arrival_time"]
@@ -36,26 +35,32 @@ class TransitGraph:
                 self.df[col] = self.df[col].apply(self.clean_time).astype(str)
                 self.df[col] = pd.to_datetime(self.df[col], format="%H:%M:%S").dt.time
 
-            for i, row in self.df.iterrows():
-                departure_time = row["departure_time"]
-                arrival_time = row["arrival_time"]
+            self.df["departure_time"] = pd.to_datetime(self.df["departure_time"], format="%H:%M:%S").dt.time
+            self.df["arrival_time"] = pd.to_datetime(self.df["arrival_time"], format="%H:%M:%S").dt.time
 
-                departure_datetime = datetime.combine(datetime(1900, 1, 1), departure_time)
-                arrival_datetime = datetime.combine(datetime(1900, 1, 1), arrival_time)
+            # Create base datetime (to ensure calculations work properly)
+            base_date = datetime(1900, 1, 2)
 
-                if arrival_time >= departure_time:
-                    departure_datetime += timedelta(days=1)
+            # Convert to full datetime
+            self.df["departure_datetime"] = self.df["departure_time"].apply(lambda x: datetime.combine(base_date, x))
+            self.df["arrival_datetime"] = self.df["arrival_time"].apply(lambda x: datetime.combine(base_date, x))
 
-                arrival_datetime += timedelta(days=1)
+            # Handle cases where arrival time is on the next day
+            self.df.loc[self.df["arrival_time"] < self.df["departure_time"], "departure_datetime"] -= timedelta(days=1)
 
-                # Update the columns directly
-                self.df.at[i, "departure_time"] = departure_datetime
-                self.df.at[i, "arrival_time"] = arrival_datetime
+            # Assign the final values
+            self.df["departure_time"] = self.df["departure_datetime"]
+            self.df["arrival_time"] = self.df["arrival_datetime"]
+
+            self.df.drop(columns=["departure_datetime", "arrival_datetime"], inplace=True)
 
             self.df["departure_time"] = pd.to_datetime(self.df["departure_time"])
             self.df["arrival_time"] = pd.to_datetime(self.df["arrival_time"])
 
             self.df["duration"] = (self.df["arrival_time"] - self.df["departure_time"]).dt.total_seconds()
+
+            self.df["start_stop"] = self.df["start_stop"].str.title()
+            self.df["end_stop"] = self.df["end_stop"].str.title()
 
         except Exception as e:
             raise ValueError(f"Error loading data: {e}")
@@ -69,7 +74,6 @@ class TransitGraph:
             raise ValueError(f"Invalid time format: {time_str}")
 
     def build_graph(self) -> None:
-
         if os.path.exists(GRAPH_FILE_PATH):
             self.logger.info(f"Loading graph from {GRAPH_FILE_PATH}")
             self.load_graph(GRAPH_FILE_PATH, format="graphml")
@@ -99,32 +103,19 @@ class TransitGraph:
             self.save_graph(GRAPH_FILE_PATH, format="graphml")
 
     def load_graph(self, filename: str, format: str = "graphml") -> None:
-        """Load the graph from a file in the specified format."""
         if format == "graphml":
             self.graph = nx.read_graphml(filename)
 
-            # Convert trips back to list and timestamps
             for u, v, data in self.graph.edges(data=True):
                 if "trips" in data:
-                    data["trips"] = json.loads(data["trips"])  # Convert from JSON string to list
+                    data["trips"] = json.loads(data["trips"])
                     for trip in data["trips"]:
                         trip["departure_time"] = pd.Timestamp(trip["departure_time"])
                         trip["arrival_time"] = pd.Timestamp(trip["arrival_time"])
-
-        elif format == "gml":
-            self.graph = nx.read_gml(filename)
-        elif format == "json":
-            with open(filename, "r") as f:
-                data = json.load(f)
-                self.graph = nx.node_link_graph(data)
-        elif format == "pickle":
-            with open(filename, "rb") as f:
-                self.graph = pickle.load(f)
         else:
             raise ValueError("Unsupported format. Use 'graphml', 'gml', 'json', or 'pickle'.")
 
     def save_graph(self, filename: str, format: str = "graphml") -> None:
-        """Save the graph to a file in the specified format."""
         if format == "graphml":
             graph_copy = copy.deepcopy(self.graph)
             for u, v, data in graph_copy.edges(data=True):
@@ -138,31 +129,8 @@ class TransitGraph:
                     data["trips"] = json.dumps(data["trips"])
 
             nx.write_graphml(graph_copy, filename)
-        elif format == "gml":
-            nx.write_gml(self.graph, filename)
-        elif format == "json":
-            data = nx.node_link_data(self.graph)
-            with open(filename, "w") as f:
-                json.dump(data, f, indent=4)
-        elif format == "pickle":
-            with open(filename, "wb") as f:
-                pickle.dump(self.graph, f)
         else:
             raise ValueError("Unsupported format. Use 'graphml', 'gml', 'json', or 'pickle'.")
-
-    def apply_duration(self) -> pd.Series:
-        return self.df.apply(
-            lambda row: (
-                datetime.combine(datetime.min, row["arrival_time"])
-                - datetime.combine(datetime.min, row["departure_time"])
-            ).seconds,
-            axis=1,
-        )
-
-    def get_graph_stats(self) -> str:
-        return (
-            f"Graph Stats:\n" f" - Nodes: {self.graph.number_of_nodes()}\n" f" - Edges: {self.graph.number_of_edges()}"
-        )
 
     def find_shortest_path(
         self, strategy: PathfindingStrategy, start: str, end: str, start_time_at_stop: datetime
