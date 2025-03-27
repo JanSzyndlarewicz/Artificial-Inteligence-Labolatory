@@ -1,4 +1,3 @@
-import heapq
 import logging
 import random
 from datetime import datetime
@@ -49,12 +48,12 @@ class TransitOptimizer:
         return total_cost, full_path, segment_costs
 
     def tabu_search(
-        self, graph: nx.DiGraph, start: str, stops: list[str], start_time: datetime, max_iter: int = 100
+            self, graph: nx.DiGraph, start: str, stops: list[str], start_time: datetime, max_iter: int = 100
     ) -> tuple[list[str], list[dict], float]:
         best_route, best_cost = [start] + stops + [start], float("inf")
         best_path = []
         tabu_size = max(5, len(stops))
-        tabu_list = []
+        tabu_edges = set()
 
         self.logger.info(f"Starting tabu search: start={start}, stops={stops}, time={start_time}")
 
@@ -85,16 +84,25 @@ class TransitOptimizer:
             new_route = best_route[:]
             new_route[i + 1], new_route[j + 1] = new_route[j + 1], new_route[i + 1]
 
+            # Check if new route contains forbidden edges
+            new_edges = {(new_route[k], new_route[k + 1]) for k in range(len(new_route) - 1)}
+            if any(edge in tabu_edges for edge in new_edges):
+                continue
+
             total_cost, full_path, _ = self.compute_cost(graph, new_route, start_time)
 
-            if total_cost < best_cost or (new_route not in [r for _, r in tabu_list]):
+            if total_cost < best_cost:
                 best_route, best_cost, best_path = new_route, total_cost, full_path
-                heapq.heappush(tabu_list, (total_cost, new_route))
-                if len(tabu_list) > tabu_size:
-                    heapq.heappop(tabu_list)
+
+            # Add new edge to tabu list
+            if len(new_edges) > 0:
+                tabu_edges.add(random.choice(list(new_edges)))
+            if len(tabu_edges) > tabu_size:
+                tabu_edges.pop()  # Delete oldest edge
 
             self.logger.debug(f"Evaluated route: {new_route}, cost: {total_cost}")
 
         self.logger.info(f"Best found route: {best_route}, cost: {best_cost}")
 
         return best_route, best_path, best_cost
+

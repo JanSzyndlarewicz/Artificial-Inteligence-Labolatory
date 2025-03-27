@@ -26,7 +26,7 @@ class TransitGraph:
 
     def load_data(self, file_path: str) -> None:
         try:
-            self.logger.info(f"Loading data from {file_path}")
+            self.logger.debug(f"Loading data from {file_path}")
             self.df = pd.read_csv(file_path, dtype=str)
 
             self.df.dropna(inplace=True)
@@ -76,10 +76,10 @@ class TransitGraph:
 
     def build_graph(self) -> None:
         if os.path.exists(GRAPH_FILE_PATH):
-            self.logger.info(f"Loading graph from {GRAPH_FILE_PATH}")
+            self.logger.debug(f"Loading graph from {GRAPH_FILE_PATH}")
             self.load_graph(GRAPH_FILE_PATH, format="graphml")
         else:
-            self.logger.info("Loading data for new graph")
+            self.logger.debug("Loading data for new graph")
             self.load_data(self.file_path)
 
             self.logger.info("Building a graph")

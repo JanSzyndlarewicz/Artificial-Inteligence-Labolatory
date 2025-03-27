@@ -125,7 +125,7 @@ def main():
 #
 #     print(f"Computation time: {time.time() - start_time:.6f} seconds")
 
-def parse_and_print_schedule(cost, path, execution_time):
+def parse_and_print_schedule(cost, path, execution_time, cost_type="t"):
     schedule = []
     current_line = None
     start_stop = None
@@ -147,19 +147,28 @@ def parse_and_print_schedule(cost, path, execution_time):
     for entry in schedule:
         print(entry)
 
-    print(f"Koszt: {cost} sekund, czyli {cost/60} minut", file=sys.stderr)
+    print(f"Cost type: {cost_type}", file=sys.stderr)
+    if cost_type == "t":
+        print(f"Koszt: {cost} sekund, czyli {cost/60} minut", file=sys.stderr)
+    elif cost_type == "p":
+        print(f"Koszt: {cost} środków transportu, czyli {cost-1} przesiadki", file=sys.stderr)
+
     print(f"Czas obliczeń: {execution_time:.2f} s", file=sys.stderr)
 
 
 def main_menu():
-    service_type = "2"
+    service_type = "1"
     #service_type = input("Choose service type (1: single trip, 2: transit optimizer): ")
 
     if service_type == "1":
-        start_stop = input("Enter start stop: ")
-        end_stop = input("Enter end stop: ")
-        optimization_criteria = input("Enter optimization (t for time, p for transfers): ")
-        start_time_at_stop = input("Enter start time (HH:MM:SS): ")
+        # start_stop = input("Enter start stop: ")
+        # end_stop = input("Enter end stop: ")
+        # optimization_criteria = input("Enter optimization (t for time, p for transfers): ")
+        # start_time_at_stop = input("Enter start time (HH:MM:SS): ")
+        start_stop = "Wojnów"
+        end_stop = "Epi"
+        optimization_criteria = "p"
+        start_time_at_stop = "16:20:00"
 
         if optimization_criteria == "t":
             strategy_name = input("Choose algorithm (1: Dijkstra, 2: A*, 3: A* optimized): ")
@@ -191,12 +200,13 @@ def main_menu():
         path, cost = transit_graph.find_shortest_path(strategy, start_stop, end_stop, start_time_at_stop_dt)
         execution_time = time.time() - start_time
 
-        parse_and_print_schedule(cost, path, execution_time)
+        parse_and_print_schedule(cost, path, execution_time, optimization_criteria)
 
     elif service_type == "2":
         start_stop = "Pl. Grunwaldzki"
         stops = ["Wojnów", "Epi", "Rynek", "Kamieńskiego"]
         start_time_at_stop = "16:30:00"
+        optimization_criteria = "t"
         # start_stop = input("Enter start stop: ")
         # stops = input("Enter stops to visit (comma-separated): ").split(",")
         # start_time_at_stop = input("Enter start time (HH:MM:SS): ")
@@ -209,7 +219,7 @@ def main_menu():
         print(route)
         execution_time = time.time() - start_time
 
-        parse_and_print_schedule(cost, path, execution_time)
+        parse_and_print_schedule(cost, path, execution_time, optimization_criteria)
 
     else:
         print("Invalid choice.")

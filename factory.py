@@ -1,4 +1,4 @@
-from heuristics import HaversineDistanceHeuristic
+from heuristics import HaversineDistanceHeuristic, HaversineMaxTimeHeuristic, HaversineCoefficientTransferHeuristic
 from path_finding_strategies import (
     AStarOptimizedTimeStrategy,
     AStarOptimizedTransferStrategy,
@@ -15,16 +15,16 @@ class StrategyFactory:
     @staticmethod
     def create_strategy(strategy_name: str) -> PathfindingStrategy:
         if strategy_name == "AStarTimeStrategy":
-            return AStarTimeStrategy(TimeBasedBestTripSelection(), HaversineDistanceHeuristic())
+            return AStarTimeStrategy(TimeBasedBestTripSelection(), HaversineMaxTimeHeuristic())
         elif strategy_name == "AStarTransfersStrategy":
-            return AStarTransfersStrategy(TransferBasedBestTripSelection(), HaversineDistanceHeuristic())
+            return AStarTransfersStrategy(TransferBasedBestTripSelection(), HaversineCoefficientTransferHeuristic())
         elif strategy_name == "DijkstraTimeStrategy":
             return DijkstraTimeStrategy(TimeBasedBestTripSelection())
         elif strategy_name == "DijkstraTransfersStrategy":
             return DijkstraTransfersStrategy(TransferBasedBestTripSelection())
         elif strategy_name == "AStarOptimizedTimeStrategy":
-            return AStarOptimizedTimeStrategy(TimeBasedBestTripSelection(), HaversineDistanceHeuristic())
+            return AStarOptimizedTimeStrategy(TimeBasedBestTripSelection(), HaversineMaxTimeHeuristic())
         elif strategy_name == "AStarOptimizedTransferStrategy":
-            return AStarOptimizedTransferStrategy(TransferBasedBestTripSelection(), HaversineDistanceHeuristic())
+            return AStarOptimizedTransferStrategy(TransferBasedBestTripSelection(), HaversineCoefficientTransferHeuristic())
         else:
             raise ValueError(f"Unknown strategy: {strategy_name}")
