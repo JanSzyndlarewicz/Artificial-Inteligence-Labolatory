@@ -12,7 +12,7 @@ from trip_selection_strategies import TransferBasedBestTripSelection
 class TransitOptimizer:
     def __init__(self, path_finder: PathfindingStrategy):
         self.logger = logging.getLogger(__name__)
-        self.astar_strategy = path_finder
+        self.path_finder = path_finder
 
     def compute_cost(
         self, graph: nx.DiGraph, route: list[str], start_time: datetime
@@ -24,7 +24,7 @@ class TransitOptimizer:
 
         for i in range(len(route) - 1):
             u, v = route[i], route[i + 1]
-            cost, path = self.astar_strategy.find_path(graph, u, v, start_time)
+            cost, path = self.path_finder.find_path(graph, u, v, start_time)
             if cost == float("inf"):
                 return float("inf"), [], []
 
@@ -36,7 +36,7 @@ class TransitOptimizer:
                 prev_line
                 and path
                 and prev_line != path[0]["line"]
-                and isinstance(self.astar_strategy.best_trip_strategy, TransferBasedBestTripSelection)
+                and isinstance(self.path_finder.best_trip_strategy, TransferBasedBestTripSelection)
             ):
                 total_cost -= 1
 
@@ -48,11 +48,12 @@ class TransitOptimizer:
         return total_cost, full_path, segment_costs
 
     def tabu_search(
-            self, graph: nx.DiGraph, start: str, stops: list[str], start_time: datetime, max_iter: int = 100
+            self, graph: nx.DiGraph, start: str, stops: list[str], start_time: datetime, max_iter: int = 100, tabu_size: int = None
     ) -> tuple[list[str], list[dict], float]:
         best_route, best_cost = [start] + stops + [start], float("inf")
         best_path = []
-        tabu_size = max(5, len(stops))
+        if not tabu_size:
+            tabu_size = max(5, len(stops))
         tabu_edges = set()
 
         self.logger.info(f"Starting tabu search: start={start}, stops={stops}, time={start_time}")

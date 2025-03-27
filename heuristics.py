@@ -54,8 +54,9 @@ class HaversineAverageTimeHeuristic(HaversineDistanceHeuristic):
         return (distance / speed) * 3600
 
 
-class HaversineCoefficientTransferHeuristic(HaversineDistanceHeuristic):
+class ManhattanTransferHeuristic(HeuristicFunction):
     def __call__(self, neighbor: str, end: str, graph: nx.DiGraph) -> Any:
-        distance = self.haversine_distance(graph.nodes[neighbor], graph.nodes[end])
-        coefficient = 0.5
-        return distance * coefficient
+        x1, y1 = float(graph.nodes[neighbor]["x"]), float(graph.nodes[neighbor]["y"])
+        x2, y2 = float(graph.nodes[end]["x"]), float(graph.nodes[end]["y"])
+        distance = abs(x1 - x2) + abs(y1 - y2)
+        return distance

@@ -1,4 +1,5 @@
-from heuristics import HaversineDistanceHeuristic, HaversineMaxTimeHeuristic, HaversineCoefficientTransferHeuristic
+from heuristics import HaversineMaxTimeHeuristic, \
+    ManhattanTransferHeuristic
 from path_finding_strategies import (
     AStarOptimizedTimeStrategy,
     AStarOptimizedTransferStrategy,
@@ -17,7 +18,7 @@ class StrategyFactory:
         if strategy_name == "AStarTimeStrategy":
             return AStarTimeStrategy(TimeBasedBestTripSelection(), HaversineMaxTimeHeuristic())
         elif strategy_name == "AStarTransfersStrategy":
-            return AStarTransfersStrategy(TransferBasedBestTripSelection(), HaversineCoefficientTransferHeuristic())
+            return AStarTransfersStrategy(TransferBasedBestTripSelection(), ManhattanTransferHeuristic())
         elif strategy_name == "DijkstraTimeStrategy":
             return DijkstraTimeStrategy(TimeBasedBestTripSelection())
         elif strategy_name == "DijkstraTransfersStrategy":
@@ -25,6 +26,6 @@ class StrategyFactory:
         elif strategy_name == "AStarOptimizedTimeStrategy":
             return AStarOptimizedTimeStrategy(TimeBasedBestTripSelection(), HaversineMaxTimeHeuristic())
         elif strategy_name == "AStarOptimizedTransferStrategy":
-            return AStarOptimizedTransferStrategy(TransferBasedBestTripSelection(), HaversineCoefficientTransferHeuristic())
+            return AStarOptimizedTransferStrategy(TransferBasedBestTripSelection(), ManhattanTransferHeuristic())
         else:
             raise ValueError(f"Unknown strategy: {strategy_name}")
