@@ -39,7 +39,7 @@ class TransitOptimizer:
                 and prev_line != path[0]["line"]
                 and isinstance(self.astar_strategy.best_trip_strategy, TransferBasedBestTripSelection)
             ):
-                total_cost += 1
+                total_cost -= 1
 
             prev_line = path[-1]["line"] if path else None
             start_time = path[-1]["arrival_time"] if path else start_time
@@ -50,7 +50,7 @@ class TransitOptimizer:
 
     def tabu_search(
         self, graph: nx.DiGraph, start: str, stops: list[str], start_time: datetime, max_iter: int = 100
-    ) -> tuple[list[str], float]:
+    ) -> tuple[list[str], list[dict], float]:
         best_route, best_cost = [start] + stops + [start], float("inf")
         best_path = []
         tabu_size = max(5, len(stops))
@@ -68,11 +68,20 @@ class TransitOptimizer:
             if not segment_costs:
                 break
 
-            weighted_choices = [i for i, cost in enumerate(segment_costs) for _ in range(int(cost * 10))]
+            # Generate weighted choices for swapping stops to prioritize the most expensive segments
+            weighted_choices = [i for i, cost in enumerate(segment_costs[1:-1]) for _ in range(int(cost * 10))]
             if not weighted_choices:
                 continue
 
-            i, j = sorted(random.sample(weighted_choices, 2))
+            # Retry if trying to swap the same stops
+            i, j = 1, 1
+            attempts = 0
+            while attempts < 10:
+                i, j = sorted(random.sample(weighted_choices, 2))
+                if i != j:
+                    break
+                attempts += 1
+
             new_route = best_route[:]
             new_route[i + 1], new_route[j + 1] = new_route[j + 1], new_route[i + 1]
 
@@ -88,9 +97,4 @@ class TransitOptimizer:
 
         self.logger.info(f"Best found route: {best_route}, cost: {best_cost}")
 
-        for trip in best_path:
-            self.logger.info(
-                f"{trip['line']} {trip['departure_time']} {trip['from']} -> {trip['arrival_time']} {trip['to']}"
-            )
-
-        return best_route, best_cost
+        return best_route, best_path, best_cost

@@ -5,6 +5,7 @@ import os
 import pickle
 from bisect import insort
 from datetime import datetime, timedelta
+from typing import Tuple, List
 
 import networkx as nx
 import pandas as pd
@@ -134,9 +135,9 @@ class TransitGraph:
 
     def find_shortest_path(
         self, strategy: PathfindingStrategy, start: str, end: str, start_time_at_stop: datetime
-    ) -> tuple[float, list[dict]]:
+    ) -> tuple[list[dict], float]:
         cost, path = strategy.find_path(self.graph, start, end, start_time_at_stop)
-        return cost, path
+        return path, cost
 
     def optimize_transit(
         self,
@@ -144,7 +145,7 @@ class TransitGraph:
         start: str,
         stops: list[str],
         start_time: datetime,
-        max_iter: int = 50,
-    ) -> tuple[list[str], float]:
+        max_iter: int = 100,
+    ) -> tuple[list[str], list[dict], float]:
 
         return transit_optimizer.tabu_search(self.graph, start, stops, start_time, max_iter)
