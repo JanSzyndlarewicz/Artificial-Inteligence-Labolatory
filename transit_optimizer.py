@@ -92,14 +92,13 @@ class TransitOptimizer:
 
             total_cost, full_path, _ = self.compute_cost(graph, new_route, start_time)
 
-            if total_cost < best_cost:
+            if total_cost < best_cost or not any(edge in tabu_edges for edge in new_edges):
                 best_route, best_cost, best_path = new_route, total_cost, full_path
 
-            # Add new edge to tabu list
-            if len(new_edges) > 0:
+            if total_cost >= best_cost and len(new_edges) > 0:
                 tabu_edges.add(random.choice(list(new_edges)))
             if len(tabu_edges) > tabu_size:
-                tabu_edges.pop()  # Delete oldest edge
+                tabu_edges.pop()
 
             self.logger.debug(f"Evaluated route: {new_route}, cost: {total_cost}")
 
