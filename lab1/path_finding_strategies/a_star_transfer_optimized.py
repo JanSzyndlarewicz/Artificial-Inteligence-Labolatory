@@ -3,12 +3,12 @@ from datetime import datetime
 
 import networkx as nx
 
-from heuristics import HeuristicFunction
-from path_finding_strategies.a_star_time import AStarTimeStrategy
-from trip_selection_strategies import BestTripSelectionStrategy
+from lab1.heuristics import HeuristicFunction
+from lab1.path_finding_strategies.a_star_transfer import AStarTransfersStrategy
+from lab1.trip_selection_strategies import BestTripSelectionStrategy
 
 
-class AStarOptimizedTimeStrategy(AStarTimeStrategy):
+class AStarOptimizedTransferStrategy(AStarTransfersStrategy):
     def __init__(self, best_trip_strategy: BestTripSelectionStrategy, heuristic_func: HeuristicFunction):
         super().__init__(best_trip_strategy, heuristic_func)
 
@@ -26,7 +26,6 @@ class AStarOptimizedTimeStrategy(AStarTimeStrategy):
                 return graph.nodes[end]["cost"], graph.nodes[end]["timetable"]
 
             visited_nodes += 1
-
             current_cost = graph.nodes[current]["cost"]
             current_arrival = graph.nodes[current]["arrival"]
 
@@ -36,11 +35,15 @@ class AStarOptimizedTimeStrategy(AStarTimeStrategy):
                     current_arrival,
                     graph.nodes[root]["timetable"][-1].get("line") if graph.nodes[root]["timetable"] else None,
                 )
-                if best_trip is None or (best_trip["departure_time"] - current_arrival).total_seconds() > 5 * 60:
+                if best_trip is None or (best_trip["departure_time"] - current_arrival).total_seconds() > 30 * 60:
                     continue
 
-                wait_time = (best_trip["departure_time"] - current_arrival).total_seconds()
-                new_cost = current_cost + wait_time + best_trip["duration"]
+                new_cost = current_cost + (
+                    1
+                    if not graph.nodes[root]["timetable"]
+                    or graph.nodes[root]["timetable"][-1]["line"] != best_trip["line"]
+                    else 0
+                )
 
                 if neighbor not in best_known or new_cost < best_known[neighbor]:
                     heuristic_adjustment = self.heuristic_func(neighbor, end, graph)
@@ -50,5 +53,4 @@ class AStarOptimizedTimeStrategy(AStarTimeStrategy):
                     self.update_node(graph, pq, current, neighbor, best_trip, new_cost, new_f)
 
         self.logger.info(f"Visited nodes: {visited_nodes}")
-
         return float("inf"), []

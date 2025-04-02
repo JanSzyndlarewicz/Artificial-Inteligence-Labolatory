@@ -1,6 +1,6 @@
 from heuristics import HaversineMaxTimeHeuristic, \
     ManhattanTransferHeuristic
-from path_finding_strategies import (
+from lab1.path_finding_strategies import (
     AStarOptimizedTimeStrategy,
     AStarOptimizedTransferStrategy,
     AStarTransfersStrategy,
@@ -8,7 +8,7 @@ from path_finding_strategies import (
     DijkstraTransfersStrategy,
     PathfindingStrategy,
 )
-from path_finding_strategies.a_star_time import AStarTimeStrategy
+from lab1.path_finding_strategies.a_star_time import AStarTimeStrategy
 from trip_selection_strategies import TimeBasedBestTripSelection, TransferBasedBestTripSelection
 
 

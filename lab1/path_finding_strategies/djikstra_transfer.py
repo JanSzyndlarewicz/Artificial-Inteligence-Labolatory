@@ -3,11 +3,11 @@ from datetime import datetime
 
 import networkx as nx
 
-from path_finding_strategies import PathfindingStrategy
-from trip_selection_strategies import BestTripSelectionStrategy
+from lab1.path_finding_strategies.abstract import PathfindingStrategy
+from lab1.trip_selection_strategies import BestTripSelectionStrategy
 
 
-class DijkstraTimeStrategy(PathfindingStrategy):
+class DijkstraTransfersStrategy(PathfindingStrategy):
     def __init__(self, best_trip_strategy: BestTripSelectionStrategy):
         super().__init__(best_trip_strategy)
 
@@ -19,11 +19,12 @@ class DijkstraTimeStrategy(PathfindingStrategy):
         visited_nodes = 0
 
         while pq:
-            cost, current = heapq.heappop(pq)
-            if cost > graph.nodes[current]["cost"]:
+            transfers, current = heapq.heappop(pq)
+            if transfers > graph.nodes[current]["cost"]:
                 continue
 
             visited_nodes += 1
+
             current_arrival = graph.nodes[current]["arrival"]
 
             for root, neighbor, data in graph.edges(current, data=True):
@@ -35,8 +36,12 @@ class DijkstraTimeStrategy(PathfindingStrategy):
                 if best_trip is None:
                     continue
 
-                wait_time = (best_trip["departure_time"] - current_arrival).total_seconds()
-                new_cost = cost + wait_time + best_trip["duration"]
+                new_cost = transfers + (
+                    1
+                    if not graph.nodes[root]["timetable"]
+                    or graph.nodes[root]["timetable"][-1]["line"] != best_trip["line"]
+                    else 0
+                )
 
                 if new_cost < graph.nodes[neighbor]["cost"]:
                     self.update_node(graph, pq, current, neighbor, best_trip, new_cost, new_cost)

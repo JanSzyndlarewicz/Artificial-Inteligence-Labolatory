@@ -1,0 +1,1 @@
+from lab1.path_finding_strategies.a_star_transfer import AStarTransfersStrategy

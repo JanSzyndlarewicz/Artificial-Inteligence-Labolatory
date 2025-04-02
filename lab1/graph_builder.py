@@ -10,7 +10,7 @@ import pandas as pd
 from pandas import Timestamp
 
 from config import GRAPH_FILE_PATH
-from path_finding_strategies import PathfindingStrategy
+from lab1.path_finding_strategies import PathfindingStrategy
 from transit_optimizer import TransitOptimizer
 
 
@@ -61,15 +61,13 @@ class TransitGraph:
             self.df["start_stop"] = self.df["start_stop"].str.title()
             self.df["end_stop"] = self.df["end_stop"].str.title()
 
-            df_copies = [self.df.copy() for _ in range(5)]
-            for i, df_copy in enumerate(df_copies, start=0):
-                df_copy["departure_time"] += timedelta(days=i)
-                df_copy["arrival_time"] += timedelta(days=i)
-
-            # Combine original and new data
-            self.df = pd.concat([self.df] + df_copies, ignore_index=True)
-
-            print(self.df.values)
+            # df_copies = [self.df.copy() for _ in range(5)]
+            # for i, df_copy in enumerate(df_copies, start=0):
+            #     df_copy["departure_time"] += timedelta(days=i)
+            #     df_copy["arrival_time"] += timedelta(days=i)
+            #
+            # # Combine original and new data
+            # self.df = pd.concat([self.df] + df_copies, ignore_index=True)
 
         except Exception as e:
             raise ValueError(f"Error loading data: {e}")
