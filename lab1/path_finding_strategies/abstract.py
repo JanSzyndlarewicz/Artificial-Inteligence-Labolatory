@@ -6,7 +6,7 @@ from functools import lru_cache
 
 import networkx as nx
 
-from lab1.trip_selection_strategies import BestTripSelectionStrategy
+from trip_selection_strategies import BestTripSelectionStrategy
 
 
 class PathfindingStrategy(ABC):

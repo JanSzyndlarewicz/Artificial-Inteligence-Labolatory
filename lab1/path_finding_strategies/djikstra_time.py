@@ -3,8 +3,8 @@ from datetime import datetime
 
 import networkx as nx
 
-from lab1.path_finding_strategies import PathfindingStrategy
-from lab1.trip_selection_strategies import BestTripSelectionStrategy
+from path_finding_strategies import PathfindingStrategy
+from trip_selection_strategies import BestTripSelectionStrategy
 
 
 class DijkstraTimeStrategy(PathfindingStrategy):

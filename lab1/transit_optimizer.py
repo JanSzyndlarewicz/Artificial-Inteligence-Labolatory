@@ -5,7 +5,7 @@ from typing import Any
 
 import networkx as nx
 
-from lab1.path_finding_strategies import PathfindingStrategy
+from path_finding_strategies import PathfindingStrategy
 from trip_selection_strategies import TransferBasedBestTripSelection
 
 

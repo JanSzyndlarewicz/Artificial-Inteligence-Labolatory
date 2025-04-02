@@ -1,6 +1,5 @@
 import unittest
-from datetime import datetime, timedelta
-from heapq import heappop, heappush
+from datetime import datetime
 
 import networkx as nx
 from path_finder import DijkstraTimeStrategy

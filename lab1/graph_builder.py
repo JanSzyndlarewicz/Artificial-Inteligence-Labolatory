@@ -10,7 +10,7 @@ import pandas as pd
 from pandas import Timestamp
 
 from config import GRAPH_FILE_PATH
-from lab1.path_finding_strategies import PathfindingStrategy
+from path_finding_strategies import PathfindingStrategy
 from transit_optimizer import TransitOptimizer
 
 

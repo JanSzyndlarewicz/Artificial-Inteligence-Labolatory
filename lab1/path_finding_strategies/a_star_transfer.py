@@ -3,9 +3,9 @@ from datetime import datetime
 
 import networkx as nx
 
-from lab1.heuristics import HeuristicFunction
-from lab1.path_finding_strategies.abstract import PathfindingStrategy
-from lab1.trip_selection_strategies import BestTripSelectionStrategy
+from heuristics import HeuristicFunction
+from path_finding_strategies.abstract import PathfindingStrategy
+from trip_selection_strategies import BestTripSelectionStrategy
 
 
 class AStarTransfersStrategy(PathfindingStrategy):
