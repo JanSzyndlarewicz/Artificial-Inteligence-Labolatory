@@ -36,6 +36,15 @@ class AIPlayer(Player):
         super().__init__(color)
         self.depth = depth
         self.heuristic_type = heuristic_type
+        # Dane dla heurystyk adaptacyjnych
+        self.opponent_style = None  # 'aggressive'/'defensive'/'balanced'
+        self.history = []
+        self.learned_weights = {
+            'center': 1.0,
+            'mobility': 1.0,
+            'aggression': 1.0,
+            'defense': 1.0
+        }
 
     def get_move(self, game):
         print(f"AI {self.color} is thinking with {self.heuristic_type} heuristic...")
@@ -319,6 +328,139 @@ class AIPlayer(Player):
 
         return total_group_value
 
+    def _adaptive_hybrid_heuristic(self, game):
+        """Adaptacyjna hybrydowa heurystyka dostosowująca się do fazy gry"""
+        phase = self._game_phase(game)
+
+        if phase == 'early':
+            # Wczesna faza - kontrola centrum i mobilność
+            return 0.6 * self._center_control_heuristic(game) + \
+                0.3 * self._mobility_heuristic(game) + \
+                0.1 * self._aggressiveness_heuristic(game)
+
+        elif phase == 'mid':
+            # Środkowa faza - agresja i mobilność
+            return 0.4 * self._aggressiveness_heuristic(game) + \
+                0.4 * self._mobility_heuristic(game) + \
+                0.2 * self._piece_count_heuristic(game)
+
+        else:
+            # Końcowa faza - liczba pionków i obrona
+            return 0.7 * self._piece_count_heuristic(game) + \
+                0.2 * self._defensive_heuristic(game) + \
+                0.1 * self._golden_spots_heuristic(game)
+
+    def _game_phase(self, game):
+        """Określa fazę gry na podstawie liczby pozostałych pionków"""
+        total_pieces = sum(1 for row in game.board.board for cell in row if cell != '_')
+        total_cells = game.board.rows * game.board.cols
+
+        if total_pieces > total_cells * 0.6:  # Więcej niż 60% pionków
+            return 'early'
+        elif total_pieces > total_cells * 0.3:  # 30%-60% pionków
+            return 'mid'
+        else:
+            return 'late'
+
+    def _style_aware_heuristic(self, game):
+        """Heurystyka reagująca na styl gry przeciwnika"""
+        self._update_opponent_style(game)
+
+        if self.opponent_style == 'aggressive':
+            # Przeciw agresywnemu przeciwnikowi - więcej obrony
+            return 0.5 * self._defensive_heuristic(game) + \
+                0.3 * self._aggressiveness_heuristic(game) + \
+                0.2 * self._piece_count_heuristic(game)
+        elif self.opponent_style == 'defensive':
+            # Przeciw defensywnemu przeciwnikowi - kontrola centrum
+            return 0.5 * self._center_control_heuristic(game) + \
+                0.3 * self._mobility_heuristic(game) + \
+                0.2 * self._golden_spots_heuristic(game)
+        else:
+            # Domyślna strategia zbalansowana
+            return 0.4 * self._mobility_heuristic(game) + \
+                0.3 * self._aggressiveness_heuristic(game) + \
+                0.2 * self._center_control_heuristic(game) + \
+                0.1 * self._defensive_heuristic(game)
+
+    def _update_opponent_style(self, game):
+        """Analizuje styl gry przeciwnika na podstawie historii ruchów"""
+        if len(self.history) < 5:
+            return
+
+        # Oblicz średnią agresywność ostatnich ruchów
+        avg_aggressiveness = sum(
+            self._calculate_move_aggressiveness(move, game)
+            for move in self.history[-5:]
+        ) / 5
+
+        if avg_aggressiveness > 0.7:
+            self.opponent_style = 'aggressive'
+        elif avg_aggressiveness < 0.3:
+            self.opponent_style = 'defensive'
+        else:
+            self.opponent_style = 'balanced'
+
+    def _calculate_move_aggressiveness(self, move, game):
+        """Ocenia agresywność pojedynczego ruchu"""
+        (r1, c1), (r2, c2) = move
+        attack_options = 0
+
+        # Sprawdź czy ruch tworzy nowe możliwości ataku
+        for dr, dc in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+            nr, nc = r2 + dr, c2 + dc
+            if (0 <= nr < game.board.rows and 0 <= nc < game.board.cols and
+                    game.board.get_piece(nr, nc) == self.color):
+                attack_options += 1
+
+        return min(attack_options / 4, 1.0)  # Normalizuj do zakresu 0-1
+
+    def _learning_heuristic(self, game):
+        """Heurystyka ucząca się na podstawie doświadczenia"""
+        score = (
+                self.learned_weights['center'] * self._center_control_heuristic(game) +
+                self.learned_weights['mobility'] * self._mobility_heuristic(game) +
+                self.learned_weights['aggression'] * self._aggressiveness_heuristic(game) +
+                self.learned_weights['defense'] * self._defensive_heuristic(game)
+        )
+
+        # Po zakończonej grze aktualizuj wagi
+        if game.is_game_over():
+            self._update_weights(game)
+
+        return score
+
+    def _update_weights(self, game):
+        """Aktualizuje wagi na podstawie wyniku gry"""
+        result = 1 if game.current_player != self.color else -1
+        learning_rate = 0.01
+
+        # Normalizuj wartości heurystyk do zakresu 0-1
+        max_possible = {
+            'center': 10 * game.board.rows * game.board.cols,
+            'mobility': game.board.rows * game.board.cols * 4,
+            'aggression': game.board.rows * game.board.cols * 8,
+            'defense': game.board.rows * game.board.cols * 3
+        }
+
+        # Aktualizuj wagi z uwzględnieniem normalizacji
+        self.learned_weights['center'] += learning_rate * result * (
+                self._center_control_heuristic(game) / max_possible['center']
+        )
+        self.learned_weights['mobility'] += learning_rate * result * (
+                self._mobility_heuristic(game) / max_possible['mobility']
+        )
+        self.learned_weights['aggression'] += learning_rate * result * (
+                self._aggressiveness_heuristic(game) / max_possible['aggression']
+        )
+        self.learned_weights['defense'] += learning_rate * result * (
+                self._defensive_heuristic(game) / max_possible['defense']
+        )
+
+        # Upewnij się, że wagi pozostają dodatnie
+        for key in self.learned_weights:
+            self.learned_weights[key] = max(0.1, self.learned_weights[key])
+
 class ClobberBoard:
     def __init__(self, board):
         self.board = board
@@ -450,6 +592,9 @@ def main():
         'defensive': 'Defensive',
         'golden_spots': 'Golden Spots',
         'group_mobility': 'Group Mobility',
+        'adaptive_hybrid': 'Adaptive Hybrid',
+        'style_aware': 'Style Aware',
+        'learning': 'Learning'
     }
 
     heuristics = list(heuristic_map.keys())
@@ -492,8 +637,8 @@ def main():
             print(f"{i}. {heuristic_map[h]}")
         heuristic2 = heuristics[int(input("AI 2 choice: ")) - 1]
 
-        player1 = create_player('ai', 'B', 5, heuristic1)
-        player2 = create_player('ai', 'W', 5, heuristic2)
+        player1 = create_player('ai', 'B', 3, heuristic1)
+        player2 = create_player('ai', 'W', 3, heuristic2)
 
         game = ClobberGame(initial_board, player1, player2)
         game.play()
@@ -506,40 +651,36 @@ def main():
         matches = []
 
         for i, h1 in enumerate(heuristics):
-
             for j, h2 in enumerate(heuristics):
-
                 if i == j:
                     continue
-
                 matches.append((h1, h2))
 
         print(f"Running {len(matches)} games in parallel...\n")
 
-        with concurrent.futures.ProcessPoolExecutor() as executor:
+        MAX_WORKERS = 16
 
+        with concurrent.futures.ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
             futures = [executor.submit(simulate_game, h1, h2, initial_board) for h1, h2 in matches]
 
+            games_finished = 0
             for future in concurrent.futures.as_completed(futures):
-
                 h1, h2, winner = future.result()
 
                 if winner == 'B':
-
                     results[h1]['wins'] += 1
-
                     results[h2]['losses'] += 1
-
                 elif winner == 'W':
-
                     results[h2]['wins'] += 1
-
                     results[h1]['losses'] += 1
+
+                games_finished += 1
+                print(f"Games finished: {games_finished}/{len(matches)}")
 
         print("\n=== TOURNAMENT RESULTS ===")
 
         for h, stats in results.items():
-            print(f"{heuristic_map[h]}: {stats['wins']}W / {stats['losses']}L")
+            print(f"{heuristic_map[h]}: {stats['wins']}W / {stats['losses']}L, score: {stats['wins'] / stats['losses']}")
 
         best = max(results.items(), key=lambda x: x[1]['wins'])[0]
 
