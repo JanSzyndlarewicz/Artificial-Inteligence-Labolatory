@@ -168,8 +168,6 @@ def run_websocket_client():
             # Send registration message to server
             await websocket.send(json.dumps({
                 "type": MessageType.REGISTER,
-                "player_type": "websocket",
-                "opponent_type": "human"
             }))
 
             print("Waiting for game to start...")

@@ -3,19 +3,15 @@ import json
 
 from clobber_game import ClobberGame
 from game_controller import WebSocketGameController
-from heuristics import HeuristicType
 from message_types import MessageType
 from player_factory import PlayerFactory
 from players import WebSocketPlayer
 
 
-
-
-
 class WebSocketGameServer:
     def __init__(self):
-        self.games = {}        # game_id -> ClobberGame
-        self.players = {}      # websocket -> (game_id, color)
+        self.games = {}
+        self.players = {}
         self.waiting_players = asyncio.Queue()
 
         self.initial_board = [
@@ -34,7 +30,7 @@ class WebSocketGameServer:
                 msg_type = data.get("type")
 
                 if msg_type == MessageType.REGISTER:
-                    await self.handle_registration(websocket, data)
+                    await self.handle_registration(websocket)
                 elif msg_type == MessageType.MAKE_MOVE:
                     await self.handle_move(websocket, data)
                 elif msg_type == MessageType.CREATE_GAME:
@@ -43,46 +39,38 @@ class WebSocketGameServer:
             print(f"Error: {e}")
             await self.handle_disconnect(websocket)
 
-    async def handle_registration(self, websocket, data):
-        player_type = data.get("player_type", "websocket")
-        opponent_type = data.get("opponent_type", "websocket")
-        depth = data.get("depth", 3)
-        heuristic = HeuristicType[data.get("heuristic_type", "MOBILITY")]
+    async def handle_registration(self, websocket):
+        try:
+            opponent_ws = self.waiting_players.get_nowait()
 
-        if opponent_type == "human":
-            try:
-                opponent_ws = self.waiting_players.get_nowait()
+            player_b = self._create_player('websocket', 'B', websocket=websocket)
+            player_w = self._create_player('websocket', 'W', websocket=opponent_ws)
+            game = self.create_game(self.initial_board, player_b, player_w)
 
-                player_b = PlayerFactory.create('websocket', color='B', websocket=websocket)
-                player_w = PlayerFactory.create('websocket', color='W', websocket=opponent_ws)
-
-                game = ClobberGame(self.initial_board, player_b, player_w)
-                self.games[game.game_id] = game
-                self.players[websocket] = (game.game_id, 'B')
-                self.players[opponent_ws] = (game.game_id, 'W')
-
-                # Notify both players
-                await self._send_game_started(websocket, game, 'B')
-                await self._send_game_started(opponent_ws, game, 'W')
-
-                controller = WebSocketGameController(game, {'B': websocket, 'W': opponent_ws})
-                asyncio.create_task(controller.play())
-
-            except asyncio.QueueEmpty:
-                await self.waiting_players.put(websocket)
-                await websocket.send(json.dumps({"type": MessageType.WAITING}))
-
-        else:  # opponent_type == "ai"
-            player_b = PlayerFactory.create('websocket', color='B', websocket=websocket)
-            player_w = PlayerFactory.create('ai', color='W', depth=depth, heuristic_type=heuristic)
-
-            game = ClobberGame(self.initial_board, player_b, player_w)
-            self.games[game.game_id] = game
             self.players[websocket] = (game.game_id, 'B')
+            self.players[opponent_ws] = (game.game_id, 'W')
 
-            await self._send_game_started(websocket, game, 'B', ai=True)
-            controller = WebSocketGameController(game, {'B': websocket, 'W': None})
-            asyncio.create_task(controller.play())
+            await self._send_game_started(websocket, game, 'B')
+            await self._send_game_started(opponent_ws, game, 'W')
+            self._run_game_controller(game, {'B': websocket, 'W': opponent_ws})
+
+        except asyncio.QueueEmpty:
+            await self.waiting_players.put(websocket)
+            await websocket.send(json.dumps({"type": MessageType.WAITING}))
+
+
+    def _create_player(self, player_type, color, websocket=None, depth=3, heuristic=None):
+        return PlayerFactory.create(player_type, color=color, websocket=websocket, depth=depth,
+                                    heuristic_type=heuristic)
+
+    def create_game(self, board, player_b, player_w):
+        game = ClobberGame(board, player_b, player_w)
+        self.games[game.game_id] = game
+        return game
+
+    def _run_game_controller(self, game, sockets):
+        controller = WebSocketGameController(game, sockets)
+        asyncio.create_task(controller.play())
 
     async def _send_game_started(self, websocket, game, color, ai=False):
         await websocket.send(json.dumps({
@@ -90,7 +78,6 @@ class WebSocketGameServer:
             "color": color,
             "board": game.board.board,
             "game_id": game.game_id,
-            "opponent_type": "ai" if ai else "human"
         }))
 
     async def handle_move(self, websocket, data):
@@ -115,17 +102,9 @@ class WebSocketGameServer:
         board = data.get('board', self.initial_board)
         p1_type = data.get('player1_type', 'websocket')
         p2_type = data.get('player2_type', 'ai')
-        h1 = HeuristicType[data.get('heuristic1', 'MOBILITY')]
-        h2 = HeuristicType[data.get('heuristic2', 'MOBILITY')]
-        d1 = data.get('depth1', 3)
-        d2 = data.get('depth2', 3)
 
-        player1 = PlayerFactory.create(p1_type, color='B', depth=d1, heuristic_type=h1, websocket=websocket)
-        player2 = PlayerFactory.create(p2_type, color='W', depth=d2, heuristic_type=h2, websocket=websocket)
-
-        game = ClobberGame(board, player1, player2)
+        game = ClobberGame(board)
         self.games[game.game_id] = game
-
         self.players[websocket] = (game.game_id, 'B') if p1_type == 'websocket' else (game.game_id, 'W')
 
         await websocket.send(json.dumps({
