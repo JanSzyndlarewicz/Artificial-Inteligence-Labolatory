@@ -1,5 +1,3 @@
-
-
 class MessageType(str):
     REGISTER = "register"
     REQUEST_MOVE = "request_move"

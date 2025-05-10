@@ -1,10 +1,9 @@
 import asyncio
 import concurrent.futures
 import json
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
 import websockets
-
 from clobber_game import ClobberGame
 from game_controller import GameController
 from heuristics import HeuristicType
@@ -14,12 +13,12 @@ from server import WebSocketGameServer
 from setup_players import register_players
 
 initial_board = [
-    ['B', 'W', 'B', 'W', 'B'],
-    ['W', 'B', 'W', 'B', 'W'],
-    ['B', 'W', 'B', 'W', 'B'],
-    ['W', 'B', 'W', 'B', 'W'],
-    ['B', 'W', 'B', 'W', 'B'],
-    ['W', 'B', 'W', 'B', 'W'],
+    ["B", "W", "B", "W", "B"],
+    ["W", "B", "W", "B", "W"],
+    ["B", "W", "B", "W", "B"],
+    ["W", "B", "W", "B", "W"],
+    ["B", "W", "B", "W", "B"],
+    ["W", "B", "W", "B", "W"],
 ]
 
 HEURISTIC_DESCRIPTIONS = {
@@ -33,7 +32,7 @@ HEURISTIC_DESCRIPTIONS = {
     HeuristicType.ADAPTIVE: "Adaptive Hybrid",
     HeuristicType.OPPONENT_AWARE: "Style Aware",
     HeuristicType.LEARNING: "Learning",
-    HeuristicType.HYBRID: "Hybrid"
+    HeuristicType.HYBRID: "Hybrid",
 }
 
 
@@ -51,21 +50,19 @@ class GameSetup:
         return list(HeuristicType)[h_choice]
 
     @staticmethod
-    def create_players(player1_type: str, player2_type: str,
-                       p1_heuristic: Optional[HeuristicType] = None,
-                       p2_heuristic: Optional[HeuristicType] = None,
-                       depth1: int = 3, depth2: int = 3) -> Tuple:
+    def create_players(
+        player1_type: str,
+        player2_type: str,
+        p1_heuristic: Optional[HeuristicType] = None,
+        p2_heuristic: Optional[HeuristicType] = None,
+        depth1: int = 3,
+        depth2: int = 3,
+    ) -> Tuple:
         p1 = PlayerFactory.create(
-            player1_type,
-            color='B',
-            heuristic_type=p1_heuristic,
-            depth=depth1 if player1_type == 'ai' else None
+            player1_type, color="B", heuristic_type=p1_heuristic, depth=depth1 if player1_type == "ai" else None
         )
         p2 = PlayerFactory.create(
-            player2_type,
-            color='W',
-            heuristic_type=p2_heuristic,
-            depth=depth2 if player2_type == 'ai' else None
+            player2_type, color="W", heuristic_type=p2_heuristic, depth=depth2 if player2_type == "ai" else None
         )
         return p1, p2
 
@@ -82,7 +79,7 @@ class GameSetup:
 
 
 def simulate_game(h1: HeuristicType, h2: HeuristicType) -> Tuple:
-    p1, p2 = GameSetup.create_players('ai', 'ai', h1, h2)
+    p1, p2 = GameSetup.create_players("ai", "ai", h1, h2)
     winner = GameSetup.start_game(p1, p2)
     return h1, h2, winner
 
@@ -97,20 +94,20 @@ def run_local_game():
 
     choice = input("Enter your choice (1-5): ")
 
-    if choice == '1':
-        p1, p2 = GameSetup.create_players('human', 'human')
+    if choice == "1":
+        p1, p2 = GameSetup.create_players("human", "human")
         GameSetup.start_game(p1, p2)
 
-    elif choice == '2':
+    elif choice == "2":
         heuristic = GameSetup.select_heuristic()
-        p1, p2 = GameSetup.create_players('human', 'ai', None, heuristic)
+        p1, p2 = GameSetup.create_players("human", "ai", None, heuristic)
         GameSetup.start_game(p1, p2)
 
-    elif choice == '3':
-        p1, p2 = GameSetup.create_players('ai', 'ai')
+    elif choice == "3":
+        p1, p2 = GameSetup.create_players("ai", "ai")
         GameSetup.start_game(p1, p2)
 
-    elif choice == '4':
+    elif choice == "4":
         print("Choose AI 1 heuristic:")
         h1 = GameSetup.select_heuristic("AI 1: ")
         print("Select depth for AI 1:")
@@ -121,11 +118,11 @@ def run_local_game():
         print("Select depth for AI 2:")
         depth2 = int(input("Depth (e.g. 3): "))
 
-        p1, p2 = GameSetup.create_players('ai', 'ai', h1, h2, depth1, depth2)
+        p1, p2 = GameSetup.create_players("ai", "ai", h1, h2, depth1, depth2)
         GameSetup.start_game(p1, p2)
 
-    elif choice == '5':
-        results = {h: {'wins': 0, 'losses': 0} for h in HeuristicType}
+    elif choice == "5":
+        results = {h: {"wins": 0, "losses": 0} for h in HeuristicType}
         matches = [(h1, h2) for h1 in HeuristicType for h2 in HeuristicType if h1 != h2]
         print(f"Running tournament with {len(matches)} matches...")
 
@@ -133,18 +130,18 @@ def run_local_game():
             futures = [executor.submit(simulate_game, h1, h2) for h1, h2 in matches]
             for i, future in enumerate(concurrent.futures.as_completed(futures), 1):
                 h1, h2, winner = future.result()
-                if winner == 'B':
-                    results[h1]['wins'] += 1
-                    results[h2]['losses'] += 1
-                elif winner == 'W':
-                    results[h2]['wins'] += 1
-                    results[h1]['losses'] += 1
+                if winner == "B":
+                    results[h1]["wins"] += 1
+                    results[h2]["losses"] += 1
+                elif winner == "W":
+                    results[h2]["wins"] += 1
+                    results[h1]["losses"] += 1
                 print(f"{i}/{len(matches)} matches completed")
 
         print("\n=== TOURNAMENT RESULTS ===")
         for h, stats in results.items():
             print(f"{HEURISTIC_DESCRIPTIONS[h]}: {stats['wins']} wins, {stats['losses']} losses")
-        best = max(results.items(), key=lambda x: x[1]['wins'])[0]
+        best = max(results.items(), key=lambda x: x[1]["wins"])[0]
         print(f"\n🏆 Best heuristic: {HEURISTIC_DESCRIPTIONS[best]} ({results[best]['wins']} wins)")
 
     else:
@@ -173,7 +170,7 @@ async def run_websocket_client():
             print("2. AI (automated play)")
             player_choice = input("Enter your choice (1-2): ")
 
-            if player_choice == '1':
+            if player_choice == "1":
                 player_type = "websocket"
                 heuristic_type = None
                 depth = None
@@ -183,9 +180,13 @@ async def run_websocket_client():
                 depth = int(input("Enter AI search depth (e.g. 3): "))
 
             # Rejestracja
-            await websocket.send(json.dumps({
-                "type": MessageType.REGISTER,
-            }))
+            await websocket.send(
+                json.dumps(
+                    {
+                        "type": MessageType.REGISTER,
+                    }
+                )
+            )
             print("Waiting for game to start...")
 
             await handle_game_loop(websocket, player_type, heuristic_type, depth)
@@ -223,13 +224,8 @@ async def run_websocket_client():
             await handle_ai_move(websocket, data, heuristic_type, depth)
 
     async def handle_ai_move(websocket, data, heuristic_type, depth):
-        temp_game = ClobberGame(data["board"], current_player=data['current_player'])
-        ai_player = PlayerFactory.create(
-            'ai',
-            color=data['current_player'],
-            depth=depth,
-            heuristic_type=heuristic_type
-        )
+        temp_game = ClobberGame(data["board"], current_player=data["current_player"])
+        ai_player = PlayerFactory.create("ai", color=data["current_player"], depth=depth, heuristic_type=heuristic_type)
 
         move = ai_player.get_move(temp_game)
         if move is None:
@@ -241,10 +237,7 @@ async def run_websocket_client():
 
     async def send_move(websocket, move):
         r1, c1, r2, c2 = move[0][0], move[0][1], move[1][0], move[1][1]
-        await websocket.send(json.dumps({
-            "type": MessageType.MAKE_MOVE,
-            "move": [(r1, c1), (r2, c2)]
-        }))
+        await websocket.send(json.dumps({"type": MessageType.MAKE_MOVE, "move": [(r1, c1), (r2, c2)]}))
 
     await connect()
 
@@ -258,11 +251,11 @@ def main():
     print("3. Connect to WebSocket server")
     choice = input("Enter your choice (1-3): ")
 
-    if choice == '1':
+    if choice == "1":
         run_local_game()
-    elif choice == '2':
+    elif choice == "2":
         run_websocket_server()
-    elif choice == '3':
+    elif choice == "3":
         run_websocket_client()
     else:
         print("Invalid choice.")

@@ -4,6 +4,7 @@ from typing import Callable, Dict
 
 from players import AIPlayer
 
+
 class HeuristicType(Enum):
     MOBILITY = auto()
     PIECE_COUNT = auto()
@@ -32,6 +33,7 @@ class HeuristicFactory:
     @classmethod
     def create(cls, heuristic_type: HeuristicType) -> Callable:
         return cls._heuristics.get(heuristic_type, cls._heuristics[HeuristicType.MOBILITY])
+
 
 def default_heuristic(ai_player: AIPlayer, game) -> float:
     """Domyślna heurystyka oparta na mobilności"""
@@ -93,17 +95,27 @@ def aggressiveness_heuristic(ai_player: AIPlayer, game) -> float:
             piece = game.board.get_piece(r, c)
             if piece == ai_player.color:
                 # Zlicz możliwości ataku
-                attacks = sum(1 for dr, dc in directions
-                              if (0 <= r + dr < game.board.rows and
-                                  0 <= c + dc < game.board.cols and
-                                  game.board.get_piece(r + dr, c + dc) == game.opponent[ai_player.color]))
+                attacks = sum(
+                    1
+                    for dr, dc in directions
+                    if (
+                        0 <= r + dr < game.board.rows
+                        and 0 <= c + dc < game.board.cols
+                        and game.board.get_piece(r + dr, c + dc) == game.opponent[ai_player.color]
+                    )
+                )
 
             elif piece == game.opponent[ai_player.color]:
                 # Analogicznie dla przeciwnika
-                attacks = sum(1 for dr, dc in directions
-                              if (0 <= r + dr < game.board.rows and
-                                  0 <= c + dc < game.board.cols and
-                                  game.board.get_piece(r + dr, c + dc) == ai_player.color))
+                attacks = sum(
+                    1
+                    for dr, dc in directions
+                    if (
+                        0 <= r + dr < game.board.rows
+                        and 0 <= c + dc < game.board.cols
+                        and game.board.get_piece(r + dr, c + dc) == ai_player.color
+                    )
+                )
                 score -= attacks * 2
 
     return score
@@ -145,9 +157,11 @@ def defensive_heuristic(ai_player: AIPlayer, game) -> float:
 def golden_spots_heuristic(ai_player: AIPlayer, game) -> float:
     """Specjalne wartości dla kluczowych pól (np. rogi, centrum)"""
     golden_spots = [
-        (0, 0), (0, game.board.cols - 1),
-        (game.board.rows - 1, 0), (game.board.rows - 1, game.board.cols - 1),
-        (game.board.rows // 2, game.board.cols // 2)
+        (0, 0),
+        (0, game.board.cols - 1),
+        (game.board.rows - 1, 0),
+        (game.board.rows - 1, game.board.cols - 1),
+        (game.board.rows // 2, game.board.cols // 2),
     ]
 
     score = 0
@@ -180,14 +194,16 @@ def group_mobility_heuristic(ai_player: AIPlayer, game) -> float:
 
                     for dr, dc in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
                         nr, nc = cr + dr, cc + dc
-                        if (0 <= nr < game.board.rows and
-                                0 <= nc < game.board.cols and
-                                not visited[nr][nc] and
-                                game.board.get_piece(nr, nc) == ai_player.color):
+                        if (
+                            0 <= nr < game.board.rows
+                            and 0 <= nc < game.board.cols
+                            and not visited[nr][nc]
+                            and game.board.get_piece(nr, nc) == ai_player.color
+                        ):
                             visited[nr][nc] = True
                             queue.append((nr, nc))
 
-                total_value += group_size ** 1.5  # Nieliniowa nagroda za większe grupy
+                total_value += group_size**1.5  # Nieliniowa nagroda za większe grupy
 
     return total_value
 
@@ -195,52 +211,49 @@ def group_mobility_heuristic(ai_player: AIPlayer, game) -> float:
 @HeuristicFactory.register(HeuristicType.ADAPTIVE)
 def adaptive_hybrid_heuristic(ai_player: AIPlayer, game) -> float:
     """Dynamicznie dostosowuje wagi w zależności od fazy gry"""
-    total_pieces = sum(1 for row in game.board.board for cell in row if cell != '_')
+    total_pieces = sum(1 for row in game.board.board for cell in row if cell != "_")
     total_cells = game.board.rows * game.board.cols
 
     if total_pieces > total_cells * 0.7:  # Wczesna faza
-        return (center_control_heuristic(ai_player, game) * 0.6 +
-                mobility_heuristic(ai_player, game) * 0.4)
+        return center_control_heuristic(ai_player, game) * 0.6 + mobility_heuristic(ai_player, game) * 0.4
 
     elif total_pieces > total_cells * 0.4:  # Środkowa faza
-        return (mobility_heuristic(ai_player, game) * 0.5 +
-                aggressiveness_heuristic(ai_player, game) * 0.3 +
-                piece_count_heuristic(ai_player, game) * 0.2)
+        return (
+            mobility_heuristic(ai_player, game) * 0.5
+            + aggressiveness_heuristic(ai_player, game) * 0.3
+            + piece_count_heuristic(ai_player, game) * 0.2
+        )
 
     else:  # Końcowa faza
-        return (piece_count_heuristic(ai_player, game) * 0.7 +
-                defensive_heuristic(ai_player, game) * 0.3)
+        return piece_count_heuristic(ai_player, game) * 0.7 + defensive_heuristic(ai_player, game) * 0.3
+
 
 @HeuristicFactory.register(HeuristicType.OPPONENT_AWARE)
 def opponent_aware_heuristic(ai_player: AIPlayer, game) -> float:
     """Dostosowuje się do stylu gry przeciwnika"""
     # Prosta analiza ostatnich ruchów przeciwnika
-    aggressive_moves = sum(1 for m in ai_player.history[-5:] if m['aggressiveness'] > 0.7)
+    aggressive_moves = sum(1 for m in ai_player.history[-5:] if m["aggressiveness"] > 0.7)
 
     if aggressive_moves >= 3:  # Przeciwnik agresywny
-        return (defensive_heuristic(ai_player, game) * 0.6 +
-                piece_count_heuristic(ai_player, game) * 0.4)
+        return defensive_heuristic(ai_player, game) * 0.6 + piece_count_heuristic(ai_player, game) * 0.4
     else:  # Standardowa strategia
-        return (mobility_heuristic(ai_player, game) * 0.5 +
-                center_control_heuristic(ai_player, game) * 0.3 +
-                golden_spots_heuristic(ai_player, game) * 0.2)
+        return (
+            mobility_heuristic(ai_player, game) * 0.5
+            + center_control_heuristic(ai_player, game) * 0.3
+            + golden_spots_heuristic(ai_player, game) * 0.2
+        )
 
 
 @HeuristicFactory.register(HeuristicType.LEARNING)
 def learning_heuristic(ai_player: AIPlayer, game) -> float:
     """Dostosowuje wagi na podstawie doświadczenia"""
-    weights = getattr(ai_player, 'learned_weights', {
-        'mobility': 1.0,
-        'center': 1.0,
-        'aggression': 1.0,
-        'defense': 1.0
-    })
+    weights = getattr(ai_player, "learned_weights", {"mobility": 1.0, "center": 1.0, "aggression": 1.0, "defense": 1.0})
 
     score = (
-            weights['mobility'] * mobility_heuristic(ai_player, game) +
-            weights['center'] * center_control_heuristic(ai_player, game) +
-            weights['aggression'] * aggressiveness_heuristic(ai_player, game) +
-            weights['defense'] * defensive_heuristic(ai_player, game)
+        weights["mobility"] * mobility_heuristic(ai_player, game)
+        + weights["center"] * center_control_heuristic(ai_player, game)
+        + weights["aggression"] * aggressiveness_heuristic(ai_player, game)
+        + weights["defense"] * defensive_heuristic(ai_player, game)
     )
 
     # Aktualizacja wag po zakończonej grze
@@ -249,13 +262,15 @@ def learning_heuristic(ai_player: AIPlayer, game) -> float:
         learning_rate = 0.01
 
         # Normalizacja i aktualizacja
-        total = sum(abs(h(ai_player, game)) for h in [mobility_heuristic, center_control_heuristic,
-                                                      aggressiveness_heuristic, defensive_heuristic])
+        total = sum(
+            abs(h(ai_player, game))
+            for h in [mobility_heuristic, center_control_heuristic, aggressiveness_heuristic, defensive_heuristic]
+        )
         if total > 0:
-            weights['mobility'] += learning_rate * result * mobility_heuristic(ai_player, game) / total
-            weights['center'] += learning_rate * result * center_control_heuristic(ai_player, game) / total
-            weights['aggression'] += learning_rate * result * aggressiveness_heuristic(ai_player, game) / total
-            weights['defense'] += learning_rate * result * defensive_heuristic(ai_player, game) / total
+            weights["mobility"] += learning_rate * result * mobility_heuristic(ai_player, game) / total
+            weights["center"] += learning_rate * result * center_control_heuristic(ai_player, game) / total
+            weights["aggression"] += learning_rate * result * aggressiveness_heuristic(ai_player, game) / total
+            weights["defense"] += learning_rate * result * defensive_heuristic(ai_player, game) / total
 
         # Zabezpieczenie przed ujemnymi wagami
         for key in weights:

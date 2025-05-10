@@ -55,20 +55,18 @@ class WebSocketGameController:
                 print("Invalid move! Try again.")
                 continue
 
-            await self.broadcast({
-                "type": MessageType.MOVE_MADE,
-                "move": move,
-                "board": self.game.board.board,
-                "current_player": self.game.current_player,
-                "game_over": self.game.is_game_over()
-            })
+            await self.broadcast(
+                {
+                    "type": MessageType.MOVE_MADE,
+                    "move": move,
+                    "board": self.game.board.board,
+                    "current_player": self.game.current_player,
+                    "game_over": self.game.is_game_over(),
+                }
+            )
 
         winner = self.game.get_winner()
-        await self.broadcast({
-            "type": MessageType.GAME_OVER,
-            "winner": winner,
-            "board": self.game.board.board
-        })
+        await self.broadcast({"type": MessageType.GAME_OVER, "winner": winner, "board": self.game.board.board})
         return winner
 
     async def broadcast(self, message: dict):

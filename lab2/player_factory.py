@@ -1,5 +1,6 @@
 from typing import Callable, Dict
 
+
 class PlayerFactory:
     _creators: Dict[str, Callable] = {}
 

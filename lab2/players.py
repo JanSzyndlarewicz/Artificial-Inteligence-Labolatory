@@ -1,7 +1,7 @@
-from abc import ABC, abstractmethod
-from typing import Optional, Tuple, List, Protocol
 import asyncio
 import json
+from abc import ABC, abstractmethod
+from typing import List, Optional, Protocol, Tuple
 
 from message_types import MessageType
 
@@ -9,7 +9,6 @@ Move = Tuple[Tuple[int, int], Tuple[int, int]]
 
 
 # === Interfejsy ===
-
 
 
 class Player(ABC):
@@ -28,6 +27,7 @@ class AsyncPlayer(Player):
 
 
 # === Implementacje graczy ===
+
 
 class HumanPlayer(Player):
     def get_move(self, game) -> Optional[Move]:
@@ -54,12 +54,16 @@ class WebSocketPlayer(AsyncPlayer):
 
     async def get_move(self, game) -> Optional[Move]:
         valid_moves = game.get_valid_moves()
-        await self.websocket.send(json.dumps({
-            "type": MessageType.REQUEST_MOVE,
-            "valid_moves": valid_moves,
-            "board": game.board.board,
-            "current_player": self.color
-        }))
+        await self.websocket.send(
+            json.dumps(
+                {
+                    "type": MessageType.REQUEST_MOVE,
+                    "valid_moves": valid_moves,
+                    "board": game.board.board,
+                    "current_player": self.color,
+                }
+            )
+        )
         move = await self.move_queue.get()
         return move
 
@@ -70,18 +74,13 @@ class AIPlayer(Player):
         self.depth = depth
         self.heuristic = heuristic
         self.history = []
-        self.learned_weights = {
-            'center': 1.0,
-            'mobility': 1.0,
-            'aggression': 1.0,
-            'defense': 1.0
-        }
+        self.learned_weights = {"center": 1.0, "mobility": 1.0, "aggression": 1.0, "defense": 1.0}
 
     def get_move(self, game) -> Optional[Move]:
         print(f"AI {self.color} is thinking...")
         best_move = None
-        best_value = float('-inf')
-        alpha, beta = float('-inf'), float('inf')
+        best_value = float("-inf")
+        alpha, beta = float("-inf"), float("inf")
 
         for move in game.get_valid_moves():
             new_game = game.copy()
@@ -100,7 +99,7 @@ class AIPlayer(Player):
         if depth == 0 or game.is_game_over():
             return self.heuristic(self, game)
 
-        best = float('-inf') if maximizing else float('inf')
+        best = float("-inf") if maximizing else float("inf")
         compare = max if maximizing else min
 
         for move in game.get_valid_moves():
