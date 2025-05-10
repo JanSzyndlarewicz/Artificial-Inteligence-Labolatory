@@ -7,6 +7,7 @@ import websockets
 from clobber_game import ClobberGame
 from game_controller import GameController
 from heuristics import HeuristicType
+from message_types import MessageType
 from player_factory import PlayerFactory
 from server import WebSocketGameServer
 from setup_players import register_players
@@ -166,7 +167,7 @@ def run_websocket_client():
 
             # Send registration message to server
             await websocket.send(json.dumps({
-                "type": "register",
+                "type": MessageType.REGISTER,
                 "player_type": "ws_human",
                 "opponent_type": "human"
             }))
@@ -177,7 +178,7 @@ def run_websocket_client():
                 data = json.loads(msg)
                 print("Message:", data)
 
-                if data["type"] == "request_move":
+                if data["type"] == MessageType.REQUEST_MOVE:
                     print("Current board:")
                     for row in data["board"]:
                         print(" ".join(row))
@@ -187,7 +188,7 @@ def run_websocket_client():
                         move_input = input("Enter move (r1 c1 r2 c2): ")
                         r1, c1, r2, c2 = map(int, move_input.strip().split())
                         await websocket.send(json.dumps({
-                            "type": "make_move",
+                            "type": MessageType.MAKE_MOVE,
                             "move": [(r1, c1), (r2, c2)]
                         }))
                     elif player_type == "ai":
@@ -208,23 +209,23 @@ def run_websocket_client():
                         r1, c1, r2, c2 = move[0][0], move[0][1], move[1][0], move[1][1]
 
                         await websocket.send(json.dumps({
-                            "type": "make_move",
+                            "type": MessageType.MAKE_MOVE,
                             "move": [(r1, c1), (r2, c2)]
                         }))
 
-                elif data["type"] == "move_made":
+                elif data["type"] == MessageType.MOVE_MADE:
                     print(f"Move: {data['move']}")
                     for row in data["board"]:
                         print(" ".join(row))
 
-                elif data["type"] == "game_over":
+                elif data["type"] == MessageType.GAME_OVER:
                     print(f"Game over! Winner: {data['winner']}")
                     break
 
-                elif data["type"] == "waiting_for_opponent":
+                elif data["type"] == MessageType.WAITING:
                     print("Waiting for opponent...")
 
-                elif data["type"] == "game_started":
+                elif data["type"] == MessageType.GAME_STARTED:
                     print(f"Game started! You are {data['color']}")
                     for row in data["board"]:
                         print(" ".join(row))

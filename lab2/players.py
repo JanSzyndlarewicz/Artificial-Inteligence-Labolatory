@@ -3,6 +3,8 @@ from typing import Optional, Tuple, List, Protocol
 import asyncio
 import json
 
+from message_types import MessageType
+
 Move = Tuple[Tuple[int, int], Tuple[int, int]]
 
 
@@ -53,7 +55,7 @@ class WebSocketHumanPlayer(AsyncPlayer):
     async def get_move(self, game) -> Optional[Move]:
         valid_moves = game.get_valid_moves()
         await self.websocket.send(json.dumps({
-            "type": "request_move",
+            "type": MessageType.REQUEST_MOVE,
             "valid_moves": valid_moves,
             "board": game.board.board,
             "current_player": self.color

@@ -2,6 +2,7 @@ import asyncio
 import json
 
 from clobber_game import ClobberGame
+from message_types import MessageType
 
 
 class GameController:
@@ -55,7 +56,7 @@ class WebSocketGameController:
                 continue
 
             await self.broadcast({
-                "type": "move_made",
+                "type": MessageType.MOVE_MADE,
                 "move": move,
                 "board": self.game.board.board,
                 "current_player": self.game.current_player,
@@ -64,7 +65,7 @@ class WebSocketGameController:
 
         winner = self.game.get_winner()
         await self.broadcast({
-            "type": "game_over",
+            "type": MessageType.GAME_OVER,
             "winner": winner,
             "board": self.game.board.board
         })

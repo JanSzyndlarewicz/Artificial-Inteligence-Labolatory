@@ -4,8 +4,12 @@ import json
 from clobber_game import ClobberGame
 from game_controller import WebSocketGameController
 from heuristics import HeuristicType
+from message_types import MessageType
 from player_factory import PlayerFactory
 from players import WebSocketHumanPlayer
+
+
+
 
 
 class WebSocketGameServer:
@@ -29,11 +33,11 @@ class WebSocketGameServer:
                 data = json.loads(message)
                 msg_type = data.get("type")
 
-                if msg_type == "register":
+                if msg_type == MessageType.REGISTER:
                     await self.handle_registration(websocket, data)
-                elif msg_type == "make_move":
+                elif msg_type == MessageType.MAKE_MOVE:
                     await self.handle_move(websocket, data)
-                elif msg_type == "create_game":
+                elif msg_type == MessageType.CREATE_GAME:
                     await self.handle_create_game(websocket, data)
         except Exception as e:
             print(f"Error: {e}")
@@ -66,7 +70,7 @@ class WebSocketGameServer:
 
             except asyncio.QueueEmpty:
                 await self.waiting_players.put(websocket)
-                await websocket.send(json.dumps({"type": "waiting_for_opponent"}))
+                await websocket.send(json.dumps({"type": MessageType.WAITING}))
 
         else:  # opponent_type == "ai"
             player_b = PlayerFactory.create('ws_human', color='B', websocket=websocket)
@@ -82,7 +86,7 @@ class WebSocketGameServer:
 
     async def _send_game_started(self, websocket, game, color, ai=False):
         await websocket.send(json.dumps({
-            "type": "game_started",
+            "type": MessageType.GAME_STARTED,
             "color": color,
             "board": game.board.board,
             "game_id": game.game_id,
@@ -125,7 +129,7 @@ class WebSocketGameServer:
         self.players[websocket] = (game.game_id, 'B') if p1_type == 'ws_human' else (game.game_id, 'W')
 
         await websocket.send(json.dumps({
-            "type": "game_created",
+            "type": MessageType.GAME_CREATED,
             "game_id": game.game_id,
             "board": game.board.board,
             "player_color": 'B' if p1_type == 'ws_human' else 'W'
@@ -150,7 +154,7 @@ class WebSocketGameServer:
 
         if isinstance(opponent, WebSocketHumanPlayer):
             try:
-                await opponent.websocket.send(json.dumps({"type": "opponent_disconnected"}))
+                await opponent.websocket.send(json.dumps({"type": MessageType.OPPONENT_DISCONNECTED}))
             except:
                 pass
 
