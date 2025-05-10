@@ -150,7 +150,7 @@ def run_websocket_client():
             player_choice = input("Enter your choice (1-2): ")
 
             if player_choice == '1':
-                player_type = "ws_human"
+                player_type = "websocket"
                 heuristic_type = None
                 depth = None
             else:
@@ -168,7 +168,7 @@ def run_websocket_client():
             # Send registration message to server
             await websocket.send(json.dumps({
                 "type": MessageType.REGISTER,
-                "player_type": "ws_human",
+                "player_type": "websocket",
                 "opponent_type": "human"
             }))
 
@@ -184,7 +184,7 @@ def run_websocket_client():
                         print(" ".join(row))
                     print(f"Valid moves: {data['valid_moves']}")
 
-                    if player_type == "ws_human":
+                    if player_type == "websocket":
                         move_input = input("Enter move (r1 c1 r2 c2): ")
                         r1, c1, r2, c2 = map(int, move_input.strip().split())
                         await websocket.send(json.dumps({

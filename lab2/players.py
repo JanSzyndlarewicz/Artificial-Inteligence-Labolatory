@@ -46,7 +46,7 @@ class HumanPlayer(Player):
                 print("Invalid input. Please enter 4 numbers separated by spaces.")
 
 
-class WebSocketHumanPlayer(AsyncPlayer):
+class WebSocketPlayer(AsyncPlayer):
     def __init__(self, color: str, websocket):
         super().__init__(color)
         self.websocket = websocket
