@@ -9,19 +9,11 @@ from players import WebSocketPlayer
 
 
 class WebSocketGameServer:
-    def __init__(self):
+    def __init__(self, board: list[list[str]]):
         self.games = {}
         self.players = {}
         self.waiting_players = asyncio.Queue()
-
-        self.initial_board = [
-            ['B', 'W', 'B', 'W', 'B'],
-            ['W', 'B', 'W', 'B', 'W'],
-            ['B', 'W', 'B', 'W', 'B'],
-            ['W', 'B', 'W', 'B', 'W'],
-            ['B', 'W', 'B', 'W', 'B'],
-            ['W', 'B', 'W', 'B', 'W'],
-        ]
+        self.initial_board = board
 
     async def handle_client(self, websocket):
         try:
