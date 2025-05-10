@@ -141,6 +141,30 @@ def run_websocket_client():
         uri = "ws://localhost:8765"
         async with websockets.connect(uri) as websocket:
             print("Connected to server")
+
+            print("Choose your player type:")
+            print("1. Human (play manually)")
+            print("2. AI (automated play)")
+
+            player_choice = input("Enter your choice (1-2): ")
+
+            if player_choice == '1':
+                player_type = "ws_human"
+                heuristic_type = None
+                depth = None
+            else:
+                player_type = "ai"
+
+                print("Choose AI heuristic:")
+                heuristics = list(HeuristicType)
+                for i, h in enumerate(heuristics, 1):
+                    print(f"{i}. {h.name}")
+                h_choice = int(input("Choice: ")) - 1
+                heuristic_type = heuristics[h_choice]
+
+                depth = int(input("Enter AI search depth (e.g. 3): "))
+
+            # Send registration message to server
             await websocket.send(json.dumps({
                 "type": "register",
                 "player_type": "ws_human",
@@ -158,12 +182,35 @@ def run_websocket_client():
                     for row in data["board"]:
                         print(" ".join(row))
                     print(f"Valid moves: {data['valid_moves']}")
-                    move_input = input("Enter move (r1 c1 r2 c2): ")
-                    r1, c1, r2, c2 = map(int, move_input.strip().split())
-                    await websocket.send(json.dumps({
-                        "type": "make_move",
-                        "move": [(r1, c1), (r2, c2)]
-                    }))
+
+                    if player_type == "ws_human":
+                        move_input = input("Enter move (r1 c1 r2 c2): ")
+                        r1, c1, r2, c2 = map(int, move_input.strip().split())
+                        await websocket.send(json.dumps({
+                            "type": "make_move",
+                            "move": [(r1, c1), (r2, c2)]
+                        }))
+                    elif player_type == "ai":
+                        from clobber_game import ClobberGame  # Import jeśli potrzebny
+                        temp_game = ClobberGame(data["board"], current_player=data['current_player'])
+
+                        # Create AI player with correct color
+                        ai_player = PlayerFactory.create('ai',
+                                                         color=data['current_player'],
+                                                         depth=depth,
+                                                         heuristic_type=heuristic_type)
+
+                        move = ai_player.get_move(temp_game)
+                        if move is None:
+                            print("AI resigned!")
+                            break
+                        print(f"AI move: {move}")
+                        r1, c1, r2, c2 = move[0][0], move[0][1], move[1][0], move[1][1]
+
+                        await websocket.send(json.dumps({
+                            "type": "make_move",
+                            "move": [(r1, c1), (r2, c2)]
+                        }))
 
                 elif data["type"] == "move_made":
                     print(f"Move: {data['move']}")

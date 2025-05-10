@@ -24,10 +24,10 @@ class ClobberBoard:
         print()
 
 class ClobberGame:
-    def __init__(self, board, player_b, player_w):
+    def __init__(self, board, player_b=None, player_w=None, current_player='B'):
         self.board = ClobberBoard(board)
         self.players = {'B': player_b, 'W': player_w}
-        self.current_player = 'B'
+        self.current_player = current_player
         self.opponent = {'B': 'W', 'W': 'B'}
         self.game_id = str(uuid4())
 
