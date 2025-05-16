@@ -8,7 +8,7 @@ def register_players():
     PlayerFactory.register("websocket", lambda color, websocket, **kwargs: WebSocketPlayer(color, websocket))
     PlayerFactory.register(
         "ai",
-        lambda color, depth=3, heuristic_type=HeuristicType.MOBILITY, **kwargs: AIPlayer(
+        lambda color, depth=3, heuristic_type=HeuristicType.PIECE_COUNT, **kwargs: AIPlayer(
             color, depth, HeuristicFactory.create(heuristic_type)
         ),
     )

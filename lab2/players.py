@@ -85,7 +85,7 @@ class AIPlayer(Player):
         for move in game.get_valid_moves():
             new_game = game.copy()
             new_game.make_move(move)
-            move_value = self.minimax(new_game, self.depth - 1, alpha, beta, False)
+            move_value = self.evaluate(new_game, self.depth - 1, alpha, beta, False)
 
             if move_value > best_value or (move_value == best_value and best_move is None):
                 best_value = move_value
@@ -95,20 +95,21 @@ class AIPlayer(Player):
 
         return best_move
 
-    def minimax(self, game, depth: int, alpha: float, beta: float, maximizing: bool) -> float:
+    def evaluate(self, game, depth: int, alpha: float, beta: float, maximize: bool) -> float:
         if depth == 0 or game.is_game_over():
-            return self.heuristic(self, game)
+            score = self.heuristic(self, game)
+            return score if maximize else -score
 
-        best = float("-inf") if maximizing else float("inf")
-        compare = max if maximizing else min
+        best = float("-inf") if maximize else float("inf")
+        compare = max if maximize else min
 
         for move in game.get_valid_moves():
             new_game = game.copy()
             new_game.make_move(move)
-            eval_ = self.minimax(new_game, depth - 1, alpha, beta, not maximizing)
+            eval_ = self.evaluate(new_game, depth - 1, alpha, beta, not maximize)
 
             best = compare(best, eval_)
-            if maximizing:
+            if maximize:
                 alpha = max(alpha, eval_)
             else:
                 beta = min(beta, eval_)
@@ -116,3 +117,21 @@ class AIPlayer(Player):
                 break
 
         return best
+
+
+    def minimax(self, game, depth: int, maximize: bool) -> float:
+        if depth == 0 or game.is_game_over():
+            score = self.heuristic(self, game)
+            return score if maximize else -score
+
+        best = float("-inf") if maximize else float("inf")
+        compare = max if maximize else min
+
+        for move in game.get_valid_moves():
+            new_game = game.copy()
+            new_game.make_move(move)
+            eval_ = self.minimax(new_game, depth - 1, not maximize)
+            best = compare(best, eval_)
+
+        return best
+

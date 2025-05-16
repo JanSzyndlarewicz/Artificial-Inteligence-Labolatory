@@ -1,6 +1,7 @@
 import asyncio
 import concurrent.futures
 import json
+from time import sleep
 from typing import Optional, Tuple
 
 import websockets
@@ -22,7 +23,6 @@ initial_board = [
 ]
 
 HEURISTIC_DESCRIPTIONS = {
-    HeuristicType.MOBILITY: "Mobility",
     HeuristicType.PIECE_COUNT: "Piece Count",
     HeuristicType.CENTER_CONTROL: "Center Control",
     HeuristicType.AGGRESSIVE: "Aggressiveness",
@@ -32,7 +32,7 @@ HEURISTIC_DESCRIPTIONS = {
     HeuristicType.ADAPTIVE: "Adaptive Hybrid",
     HeuristicType.OPPONENT_AWARE: "Style Aware",
     HeuristicType.LEARNING: "Learning",
-    HeuristicType.HYBRID: "Hybrid",
+    HeuristicType.STRATEGIC: "Strategic",
 }
 
 
@@ -79,7 +79,8 @@ class GameSetup:
 
 
 def simulate_game(h1: HeuristicType, h2: HeuristicType) -> Tuple:
-    p1, p2 = GameSetup.create_players("ai", "ai", h1, h2)
+    register_players()
+    p1, p2 = GameSetup.create_players("ai", "ai", h1, h2, depth1=5, depth2=5)
     winner = GameSetup.start_game(p1, p2)
     return h1, h2, winner
 
@@ -122,8 +123,14 @@ def run_local_game():
         GameSetup.start_game(p1, p2)
 
     elif choice == "5":
-        results = {h: {"wins": 0, "losses": 0} for h in HeuristicType}
-        matches = [(h1, h2) for h1 in HeuristicType for h2 in HeuristicType if h1 != h2]
+        # Initialize a matrix (dict of dicts) to store results
+        heuristic_types = list(HeuristicType)
+        results = {h1: {h2: {"wins": 0, "losses": 0} for h2 in heuristic_types} for h1 in heuristic_types}
+
+        # Initialize counters for total wins by color
+        total_wins = {"B": 0, "W": 0}
+
+        matches = [(h1, h2) for h1 in HeuristicType for h2 in HeuristicType]
         print(f"Running tournament with {len(matches)} matches...")
 
         with concurrent.futures.ProcessPoolExecutor(max_workers=18) as executor:
@@ -131,18 +138,39 @@ def run_local_game():
             for i, future in enumerate(concurrent.futures.as_completed(futures), 1):
                 h1, h2, winner = future.result()
                 if winner == "B":
-                    results[h1]["wins"] += 1
-                    results[h2]["losses"] += 1
+                    results[h1][h2]["wins"] += 1
+                    results[h2][h1]["losses"] += 1
+                    total_wins["B"] += 1
                 elif winner == "W":
-                    results[h2]["wins"] += 1
-                    results[h1]["losses"] += 1
+                    results[h2][h1]["wins"] += 1
+                    results[h1][h2]["losses"] += 1
+                    total_wins["W"] += 1
                 print(f"{i}/{len(matches)} matches completed")
 
-        print("\n=== TOURNAMENT RESULTS ===")
-        for h, stats in results.items():
-            print(f"{HEURISTIC_DESCRIPTIONS[h]}: {stats['wins']} wins, {stats['losses']} losses")
-        best = max(results.items(), key=lambda x: x[1]["wins"])[0]
-        print(f"\n🏆 Best heuristic: {HEURISTIC_DESCRIPTIONS[best]} ({results[best]['wins']} wins)")
+        print("\n=== TOURNAMENT RESULTS (MATRIX) ===")
+
+        # Print header row
+        print(" " * 20, end="")
+        for h in heuristic_types:
+            print(f"{h.name[:8]:>10}", end="")
+        print()
+
+        # Print matrix rows
+        for h1 in heuristic_types:
+            print(f"{h1.name:<20}", end="")
+            for h2 in heuristic_types:
+                print(f"{results[h1][h2]['wins']:>3}-{results[h1][h2]['losses']:<3}", end=" ")
+            print()
+
+        # Print total wins by color
+        print(f"\nTotal wins by color:")
+        print(f"Black (B): {total_wins['B']}")
+        print(f"White (W): {total_wins['W']}")
+
+        # Calculate and print the best heuristic
+        heuristic_wins = {h: sum(results[h][h2]["wins"] for h2 in heuristic_types if h2 != h) for h in heuristic_types}
+        best = max(heuristic_wins.items(), key=lambda x: x[1])[0]
+        print(f"\n🏆 Best heuristic: {best.name} ({heuristic_wins[best]} total wins)")
 
     else:
         print("Invalid choice. Exiting.")
@@ -256,7 +284,7 @@ def main():
     elif choice == "2":
         run_websocket_server()
     elif choice == "3":
-        run_websocket_client()
+        asyncio.run(run_websocket_client())
     else:
         print("Invalid choice.")
 
