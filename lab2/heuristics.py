@@ -201,10 +201,10 @@ def adaptive_hybrid_heuristic(ai_player: AIPlayer, game) -> float:
     total_pieces = sum(1 for row in game.board.board for cell in row if cell != "_")
     total_cells = game.board.rows * game.board.cols
 
-    if total_pieces > total_cells * 0.7:  # Wczesna faza
+    if total_pieces > total_cells * 0.7:
         return center_control_heuristic(ai_player, game) * 0.6 + piece_count_heuristic(ai_player, game) * 0.4
 
-    elif total_pieces > total_cells * 0.4:  # Środkowa faza
+    elif total_pieces > total_cells * 0.4:
         return (
             piece_count_heuristic(ai_player, game) * 0.5
             + aggressiveness_heuristic(ai_player, game) * 0.3
@@ -218,7 +218,6 @@ def adaptive_hybrid_heuristic(ai_player: AIPlayer, game) -> float:
 @HeuristicFactory.register(HeuristicType.OPPONENT_AWARE)
 def opponent_aware_heuristic(ai_player: AIPlayer, game) -> float:
     """Dostosowuje się do stylu gry przeciwnika"""
-    # Prosta analiza ostatnich ruchów przeciwnika
     aggressive_moves = sum(1 for m in ai_player.history[-5:] if m["aggressiveness"] > 0.7)
 
     if aggressive_moves >= 3:  # Przeciwnik agresywny

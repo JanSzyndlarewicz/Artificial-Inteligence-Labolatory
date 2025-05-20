@@ -30,6 +30,8 @@ class GameController:
 
         winner = self.game.get_winner()
         print(f"Game over. Winner: {winner}" if winner else "Game ended without winner.")
+        node_count = self.game.players["B"].node_count
+        print(f"Node processed: {node_count}")
         return winner
 
 

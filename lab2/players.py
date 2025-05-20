@@ -75,6 +75,7 @@ class AIPlayer(Player):
         self.heuristic = heuristic
         self.history = []
         self.learned_weights = {"center": 1.0, "mobility": 1.0, "aggression": 1.0, "defense": 1.0}
+        self.node_count = 0  # Initialize node counter
 
     def get_move(self, game) -> Optional[Move]:
         print(f"AI {self.color} is thinking...")
@@ -93,9 +94,12 @@ class AIPlayer(Player):
 
             alpha = max(alpha, best_value)
 
+        print(f"Total alfa-beta pruning nodes visited: {self.node_count}")  # Print the total nodes visited
         return best_move
 
     def evaluate(self, game, depth: int, alpha: float, beta: float, maximize: bool) -> float:
+        self.node_count += 1  # Increment node counter each time evaluate is called
+
         if depth == 0 or game.is_game_over():
             score = self.heuristic(self, game)
             return score if maximize else -score
