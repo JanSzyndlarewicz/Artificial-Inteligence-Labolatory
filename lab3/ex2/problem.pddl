@@ -3,19 +3,19 @@
 
   (:objects
     robo - robot
-    pokoj1 pokoj2 pokoj3 - room
+    room1 room2 room3 - room
   )
 
   (:init
-    (at robo pokoj1)
-    (dirty pokoj1)
-    (dirty pokoj2)
-    (dirty pokoj3)
+    (at robo room1)
+    (dirty room1)
+    (dirty room2)
+    (dirty room3)
   )
 
   (:goal (and
-    (clean pokoj1)
-    (clean pokoj2)
-    (clean pokoj3)
+    (clean room1)
+    (clean room2)
+    (clean room3)
   ))
 )
