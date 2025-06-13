@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split, cross_val_score, KFold, St
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.decomposition import PCA
 from sklearn.impute import KNNImputer
-from sklearn.naive_bayes import GaussianNB
+from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB, CategoricalNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
@@ -76,6 +76,15 @@ class DataPreprocessor:
             random_state=random_state,
             stratify=stratify
         )
+        print("Rozmiar X_train:", self.X_train.shape)
+        print("Rozmiar X_val:", self.X_val.shape)
+        print("Rozmiar y_train:", self.y_train.shape)
+        print("Rozmiar y_val:", self.y_val.shape)
+        print("Typ danych X_train:", type(self.X_train))
+        print("Typ danych y_train:", type(self.y_train))
+        print("Pierwsze wiersze X_train:\n", self.X_train.head())
+        print("Pierwsze wartości y_train:\n", self.y_train.head())
+
 
     def balance_data(self, random_state=42):
         """Balance classes using SMOTE"""
@@ -132,14 +141,22 @@ class ModelEvaluator:
             #     'model': GaussianNB(),
             #     'params': {}
             # },
-            # 'Decision Tree': {
-            #     'model': DecisionTreeClassifier(),
+            # 'Bernoulli Naive Bayes': {
+            #     'model': BernoulliNB(),
             #     'params': {
-            #         'max_depth': [None, 3, 4, 5, 10],
-            #         'min_samples_split': [2, 5, 10],
-            #         'criterion': ['gini', 'entropy']
+            #         'alpha': [0.1, 1.0, 10.0],
+            #         'binarize': [1.0],
+            #         'fit_prior': [True]
             #     }
             # },
+            'Decision Tree': {
+                'model': DecisionTreeClassifier(),
+                'params': {
+                    'max_depth': [None],
+                    #'min_samples_split': [],
+                    'criterion': ['gini', 'entropy']
+                }
+            },
             # 'Random Forest': {
             #     'model': RandomForestClassifier(),
             #     'params': {
@@ -148,13 +165,13 @@ class ModelEvaluator:
             #         'class_weight': [None, 'balanced']
             #     }
             # },
-            'SVM': {
-                'model': SVC(),
-                'params': {
-                    'kernel': ['rbf', 'linear'],
-                    'C': [0.1, 1, 10, 100]
-                }
-            }
+            # 'SVM': {
+            #     'model': SVC(),
+            #     'params': {
+            #         'kernel': ['rbf', 'linear'],
+            #         'C': [0.1, 1, 10, 100]
+            #     }
+            # }
         }
         return models
 
@@ -162,6 +179,10 @@ class ModelEvaluator:
         """Train and evaluate a single model"""
         model.fit(X_train, y_train)
         y_pred = model.predict(X_val)
+        print("Test")
+        print(y_pred)
+        print("Test1")
+        print(y_val)
 
         # Calculate metrics
         metrics = {name: metric(y_val, y_pred) for name, metric in self.metrics.items()}
@@ -180,7 +201,7 @@ class ModelEvaluator:
         self.results.append(result)
 
         # Plot confusion matrix
-        self.plot_confusion_matrix(y_val, y_pred, f"{model_name} with {data_prep}")
+        #self.plot_confusion_matrix(y_val, y_pred, f"{model_name} with {data_prep}")
 
         return metrics
 
@@ -269,7 +290,7 @@ def main():
     preprocessor.impute_missing_values()
 
     # Choose whether to balance data or not
-    USE_BALANCED_DATA = True
+    USE_BALANCED_DATA = False
 
     if USE_BALANCED_DATA:
         preprocessor.balance_data()
@@ -277,16 +298,59 @@ def main():
     else:
         preprocessor.split_data()
 
+    print("\n=== Data Preparation Complete ===")
+    print(f"Number of class occurrences in training set: {preprocessor.y_train.value_counts()}")
+
     # Get different data processing versions
     data_versions = preprocessor.get_data_versions()
 
+    print(preprocessor.X_train)
+    print(preprocessor.y_train)
+
     # Initialize evaluator with the prepared data
-    evaluator = ModelEvaluator(
-        preprocessor.X_train,
-        preprocessor.X_val,
-        preprocessor.y_train,
-        preprocessor.y_val
-    )
+    # evaluator = ModelEvaluator(
+    #     preprocessor.X_train,
+    #     #preprocessor.X_val,
+    #     preprocessor.X_train,
+    #
+    #     preprocessor.y_train,
+    #     preprocessor.y_train,
+    #     #preprocessor.y_val
+    # )
+    #
+    # traint random forest
+    model = DecisionTreeClassifier(random_state=42)
+    model.fit(preprocessor.X_train, preprocessor.y_train)
+
+    y_train_pred = model.predict(preprocessor.X_train)
+
+    train_accuracy = accuracy_score(preprocessor.y_train, y_train_pred)
+    train_precision = precision_score(preprocessor.y_train, y_train_pred, average='weighted', zero_division=1)
+    train_recall = recall_score(preprocessor.y_train, y_train_pred, average='weighted')
+    train_f1 = f1_score(preprocessor.y_train, y_train_pred, average='weighted')
+
+    print("Trenigowe")
+    print(f"Accuracy: {train_accuracy:.3f}")
+    print(f"Precision: {train_precision:.3f}")
+    print(f"Recall: {train_recall:.3f}")
+    print(f"F1 Score: {train_f1:.3f}")
+
+    y_val_pred = model.predict(preprocessor.X_val)
+
+    val_accuracy = accuracy_score(preprocessor.y_val, y_val_pred)
+    val_precision = precision_score(preprocessor.y_val, y_val_pred, average='weighted', zero_division=1)
+    val_recall = recall_score(preprocessor.y_val, y_val_pred, average='weighted')
+    val_f1 = f1_score(preprocessor.y_val, y_val_pred, average='weighted')
+
+    print("Wlidanyjne")
+    print(f"Accuracy: {val_accuracy:.3f}")
+    print(f"Precision: {val_precision:.3f}")
+    print(f"Recall: {val_recall:.3f}")
+    print(f"F1 Score: {val_f1:.3f}")
+
+    exit(0)
+
+
 
     # Run experiments with all combinations
     evaluator.run_experiments(data_versions)
@@ -305,18 +369,18 @@ def main():
     print(f"Parameters: { {k: v for k, v in best_model_info.items() if k.startswith('param_')} }")
 
     # Reinstantiate best model with its parameters
-    models = evaluator.get_models()
-    best_model = models[best_model_info['Model']]['model']
-    best_model.set_params(**{k.replace('param_', ''): v
-                             for k, v in best_model_info.items()
-                             if k.startswith('param_')})
-
-    # Cross-validation
-    evaluator.cross_validate_best_model(preprocessor.X, preprocessor.y, best_model)
-
-    # Feature importance (if applicable)
-    if best_model_info['Model'] in ['Decision Tree', 'Random Forest']:
-        evaluator.plot_feature_importance(best_model, preprocessor.X.columns)
+    # models = evaluator.get_models()
+    # best_model = models[best_model_info['Model']]['model']
+    # best_model.set_params(**{k.replace('param_', ''): v
+    #                          for k, v in best_model_info.items()
+    #                          if k.startswith('param_')})
+    #
+    # # Cross-validation
+    # evaluator.cross_validate_best_model(preprocessor.X, preprocessor.y, best_model)
+    #
+    # # Feature importance (if applicable)
+    # if best_model_info['Model'] in ['Decision Tree', 'Random Forest']:
+    #     evaluator.plot_feature_importance(best_model, preprocessor.X.columns)
 
 
 if __name__ == "__main__":
