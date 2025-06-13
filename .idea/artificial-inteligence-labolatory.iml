@@ -5,6 +5,7 @@
       <sourceFolder url="file://$MODULE_DIR$/lab1" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/lab2" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/lab4" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/lab5" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
     </content>
     <orderEntry type="inheritedJdk" />
